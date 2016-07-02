@@ -11,7 +11,7 @@ function ParingGeneralDataInputOutputCharacteristic() {
         descriptors: [
             new BlenoDescriptor({
                 uuid: '2902',   // client characterstic configuration
-                value: 'Commands to pair with the nuki sim'
+                value: 'Pairing commands'
             })
         ]
     });
