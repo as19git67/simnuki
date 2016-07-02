@@ -21,7 +21,6 @@ bleno.on('advertisingStart', function(error) {
 
     if (!error) {
         bleno.setServices([
-            keyturnerInitializationService,
             keyturnerPairingService
         ]);
     }
