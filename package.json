@@ -6,8 +6,8 @@
     "start": "node ./main.js"
   },
   "dependencies": {
-    "curve25519": "git://github.com/KhaosT/node-curve25519",
     "bleno": "^0.4.0",
-    "debug": "~2.2.0"
+    "debug": "~2.2.0",
+    "sodium": "^1.1.12"
   }
 }
