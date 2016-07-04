@@ -10,7 +10,7 @@ function ParingGeneralDataInputOutputCharacteristic() {
         properties: ['write', 'indicate'],
         descriptors: [
             new BlenoDescriptor({
-                uuid: '2902',   // client characterstic configuration
+                uuid: '2901',   // client characterstic configuration
                 value: 'Pairing commands'
             })
         ]
@@ -28,6 +28,18 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
     } else {
         // todo something with the data
         callback(this.RESULT_SUCCESS);
+    }
+};
+
+ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function (offset, callback) {
+    console.log("ParingGeneralDataInputOutputCharacteristic indicate requested", offset);
+    if (offset) {
+        callback(this.RESULT_ATTR_NOT_LONG, null);
+    }
+    else {
+        var data = new Buffer(2);
+        data.writeUInt16BE(1, 0);
+        callback(this.RESULT_SUCCESS, data);
     }
 };
 
