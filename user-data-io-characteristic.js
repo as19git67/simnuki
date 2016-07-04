@@ -6,7 +6,7 @@ var BlenoDescriptor = bleno.Descriptor;
 
 function UserSpecificDataInputOutputCharacteristic() {
     UserSpecificDataInputOutputCharacteristic.super_.call(this, {
-        uuid: 'a92ee201-5501-11e4-916c-0800200c9a66',
+        uuid: 'a92ee202-5501-11e4-916c-0800200c9a66',
         properties: ['write', 'indicate'],
         descriptors: [
             new BlenoDescriptor({
