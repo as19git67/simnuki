@@ -12,7 +12,7 @@ bleno.on('stateChange', function (state) {
     console.log('on -> stateChange: ' + state);
 
     if (state === 'poweredOn') {
-        bleno.startAdvertising('SimNuki', [keyturnerService.uuid]);
+        bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
     } else {
         bleno.stopAdvertising();
     }
