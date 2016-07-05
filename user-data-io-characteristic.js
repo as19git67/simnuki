@@ -20,7 +20,7 @@ function UserSpecificDataInputOutputCharacteristic() {
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);
 
-UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResponse, callback) {
+UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
