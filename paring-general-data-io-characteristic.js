@@ -28,6 +28,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
         callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
     } else {
         if (this.updateValueCallback) {
+            console.log("updateValueCallback");
             this.updateValueCallback(new Buffer([1,2,3]));
         }
         // todo something with the data
