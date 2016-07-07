@@ -1,11 +1,14 @@
 var bleno = require('bleno');
 
+var publicKey = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
+var privateKey = "0123452654624657165961";
+
 var KeyturnerInitializationService = require('./keyturner-initialization-service');
 var KeyturnerPairingService = require('./keyturner-pairing-service');
 var KeyturnerService = require('./keyturner-service');
 
 var keyturnerInitializationService = new KeyturnerInitializationService();
-var keyturnerPairingService = new KeyturnerPairingService();
+var keyturnerPairingService = new KeyturnerPairingService(publicKey, privateKey);
 var keyturnerService = new KeyturnerService();
 
 bleno.on('stateChange', function (state) {

@@ -5,12 +5,12 @@ var BlenoPrimaryService = bleno.PrimaryService;
 
 var PairingGeneralDataInputOutputCharacteristic = require('./paring-general-data-io-characteristic');
 
-function KeyturnerPairingService() {
+function KeyturnerPairingService(publicKey, privateKey) {
     KeyturnerPairingService.super_.call(this, {
         // uuid: 'a92ee100-5501-11e4-916c-0800200c9a66',
         uuid: 'a92ee100550111e4916c0800200c9a66',
         characteristics: [
-            new PairingGeneralDataInputOutputCharacteristic()
+            new PairingGeneralDataInputOutputCharacteristic(publicKey, privateKey)
         ]
     });
 }
