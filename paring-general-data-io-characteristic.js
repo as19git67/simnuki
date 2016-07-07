@@ -98,7 +98,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function(maxV
     if (this.dataStillToSend.length > 0) {
         var value = this.getNextChunk(this.dataStillToSend);
         if (value.length > 0) {
-            console.log("sending " + value.length + " bytes as indication");
+            console.log("sending " + value.length + " bytes from onSubscribe");
             updateValueCallback(value);
         }
     } else {
@@ -115,7 +115,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function() 
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
     console.log("ParingGeneralDataInputOutputCharacteristic indicate");
-    if (this.updateValueCallback) {
+    if (this._updateValueCallback) {
         if (this.dataStillToSend.length > 0) {
             var value = this.getNextChunk(this.dataStillToSend);
             if (value.length > 0) {
