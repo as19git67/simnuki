@@ -52,9 +52,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (da
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     console.log("ParingGeneralDataInputOutputCharacteristic", data);
-    var dataForCrc = Buffer.slice(0, data.length - 2);
+    var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
-    var crcSumRetrieved = Buffer.readUInt16LE(data.length - 2);
+    var crcSumRetrieved = data.readUInt16LE(data.length - 2);
 
     if (crcSumCalc === crcSumRetrieved) {
         console.log("checksum is ok");
