@@ -89,6 +89,19 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
     }
 };
 
+
+ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function(maxValueSize, updateValueCallback) {
+    console.log('ParingGeneralDataInputOutputCharacteristic - onSubscribe');
+
+    this._updateValueCallback = updateValueCallback;
+};
+
+ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function() {
+    console.log('ParingGeneralDataInputOutputCharacteristic - onUnsubscribe');
+
+    this._updateValueCallback = null;
+};
+
 ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
     console.log("ParingGeneralDataInputOutputCharacteristic indicate");
     if (this.updateValueCallback) {
