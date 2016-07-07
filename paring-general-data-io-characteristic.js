@@ -63,25 +63,25 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
         } else if (data.length > 200) {
             callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
         } else {
-            if (this.updateValueCallback) {
+//            if (this.updateValueCallback) {
                 var cmd = new Buffer(2);
                 cmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
                 var responseData = Buffer.concat([cmd, this.publicKey]);
                 var checksum = crc.crc16ccitt(responseData);
                 var checksumBuffer = new Buffer(2);
                 checksumBuffer.writeUInt16LE(checksum);
-                var dataWithChecksum = Buffer.concat([responseData, checksumBuffer]);
-                console.log("public key data with checksum:", dataWithChecksum);
+            this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
+                console.log("public key data with checksum:", this.dataStillToSend);
 
-                var value = this.getNextChunk(dataWithChecksum);
-                if (value.length > 0) {
-                    this.updateValueCallback(value);
-                }
+                // var value = this.getNextChunk(this.dataStillToSend);
+                // if (value.length > 0) {
+                //     this.updateValueCallback(value);
+                // }
                 callback(this.RESULT_SUCCESS);
-            } else {
-                console.log("don't have updateValueCallback on write request");
-                callback(this.RESULT_UNLIKELY_ERROR);
-            }
+//            } else {
+//                console.log("don't have updateValueCallback on write request");
+//                callback(this.RESULT_UNLIKELY_ERROR);
+//            }
         }
     } else {
         console.log("checksum is NOT ok");
@@ -94,6 +94,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function(maxV
     console.log('ParingGeneralDataInputOutputCharacteristic - onSubscribe');
 
     this._updateValueCallback = updateValueCallback;
+    
 };
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function() {
