@@ -93,11 +93,13 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("ERROR missing SL public key");
+                            this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_UNLIKELY_ERROR);
                         }
                     }
                     else {
                         console.log("command or command identifier wrong");
+                        this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_UNLIKELY_ERROR);
                     }
                     break;
@@ -121,17 +123,20 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     }
                     else {
                         console.log("command or command identifier wrong");
+                        this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_UNLIKELY_ERROR);
                     }
 
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
+                    this.state = this.PAIRING_IDLE;
                     callback(this.RESULT_UNLIKELY_ERROR);
             }
         }
     } else {
         console.log("checksum is NOT ok");
+        this.state = this.PAIRING_IDLE;
         callback(this.RESULT_UNLIKELY_ERROR);
     }
 };
@@ -162,6 +167,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
             break;
         default:
             console.log("ERROR unexpected pairing state");
+            this.state = this.PAIRING_IDLE;
             callback(this.RESULT_UNLIKELY_ERROR);
     }
 };
