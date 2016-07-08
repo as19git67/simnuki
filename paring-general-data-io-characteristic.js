@@ -160,7 +160,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
                 console.log("don't have more data to notify");
             }
 
-            if (this.dataStillToSend.length = 0) {
+            if (this.dataStillToSend.length === 0) {
                 this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
             }
 
@@ -191,7 +191,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                 } else {
                     console.log("don't have more data to indicate");
                 }
-                if (this.dataStillToSend.length = 0) {
+                if (this.dataStillToSend.length === 0) {
                     this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
                 }
 
