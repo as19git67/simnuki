@@ -18,7 +18,8 @@ function ParingGeneralDataInputOutputCharacteristic(keys) {
     }
     this.state = this.PAIRING_IDLE;
     this.keys = keys;
-
+    this.dataStillToSend = new Buffer(0);
+    
     ParingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
         uuid: 'a92ee101550111e4916c0800200c9a66',
@@ -147,27 +148,27 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
 
     this._updateValueCallback = updateValueCallback;
 
-    switch (this.state) {
-        case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
+    if (this.dataStillToSend.length > 0) {
+        switch (this.state) {
+            case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
 
-            if (this.dataStillToSend.length > 0) {
                 var value = this.getNextChunk(this.dataStillToSend);
                 if (value.length > 0) {
                     console.log("sending " + value.length + " bytes from onSubscribe");
                     updateValueCallback(value);
                 }
-            } else {
-                console.log("don't have more data to notify");
-            }
 
-            if (this.dataStillToSend.length === 0) {
-                this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
-            }
+                if (this.dataStillToSend.length === 0) {
+                    this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
+                }
 
-            break;
-        default:
-            console.log("ERROR unexpected pairing state");
-            this.state = this.PAIRING_IDLE;
+                break;
+            default:
+                console.log("ERROR unexpected pairing state");
+                this.state = this.PAIRING_IDLE;
+        }
+    } else {
+        console.log("don't have more data to notify");
     }
 };
 
@@ -179,30 +180,30 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function ()
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
     console.log("ParingGeneralDataInputOutputCharacteristic indicate");
-    if (this._updateValueCallback) {
-        switch (this.state) {
-            case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
-                if (this.dataStillToSend.length > 0) {
+    if (this.dataStillToSend.length > 0) {
+        if (this._updateValueCallback) {
+            switch (this.state) {
+                case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
                     var value = this.getNextChunk(this.dataStillToSend);
                     if (value.length > 0) {
                         console.log("sending " + value.length + " bytes as indication");
                         this._updateValueCallback(value);
                     }
-                } else {
-                    console.log("don't have more data to indicate");
-                }
-                if (this.dataStillToSend.length === 0) {
-                    this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
-                }
+                    if (this.dataStillToSend.length === 0) {
+                        this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
+                    }
 
-                break;
-            default:
-                console.log("ERROR unexpected pairing state");
-                this.state = this.PAIRING_IDLE;
+                    break;
+                default:
+                    console.log("ERROR unexpected pairing state");
+                    this.state = this.PAIRING_IDLE;
+            }
+        } else {
+            console.log("don't have updateValueCallback on indicate");
+            this.state = this.PAIRING_IDLE;
         }
     } else {
-        console.log("don't have updateValueCallback on indicate");
-        this.state = this.PAIRING_IDLE;
+        console.log("don't have more data to indicate");
     }
 };
 

@@ -11,7 +11,7 @@ function GeneralDataInputOutputCharacteristic(keys) {
         properties: ['write', 'indicate'],
         descriptors: [
             new BlenoDescriptor({
-                uuid: '2901',
+                uuid: '2902',   // client characterstic configuration
                 value: 'set a value'
             })
         ]
