@@ -42,6 +42,12 @@ bleno.on('advertisingStart', function (error) {
 
 bleno.on('accept', function (address) {
     console.log('on -> accept: ' + address);
+    keyturnerPairingService = new KeyturnerPairingService(keys);
+    bleno.setServices([
+        keyturnerInitializationService,
+        keyturnerPairingService,
+        keyturnerService
+    ]);
 });
 
 bleno.on('disconnect', function () {

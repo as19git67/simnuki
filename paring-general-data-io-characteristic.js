@@ -168,7 +168,6 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
         default:
             console.log("ERROR unexpected pairing state");
             this.state = this.PAIRING_IDLE;
-            callback(this.RESULT_UNLIKELY_ERROR);
     }
 };
 
