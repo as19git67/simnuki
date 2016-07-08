@@ -88,7 +88,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                             checksumBuffer.writeUInt16LE(checksum);
                             this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
                             console.log("prepared to send public key data with checksum:", this.dataStillToSend);
-                            this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
+                            this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY;
 
                             callback(this.RESULT_SUCCESS);
                         } else {
@@ -157,7 +157,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
                     updateValueCallback(value);
                 }
             } else {
-                console.log("don't have more data to indicate");
+                console.log("don't have more data to notify");
             }
 
             if (this.dataStillToSend.length = 0) {
@@ -180,17 +180,29 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function ()
 ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
     console.log("ParingGeneralDataInputOutputCharacteristic indicate");
     if (this._updateValueCallback) {
-        if (this.dataStillToSend.length > 0) {
-            var value = this.getNextChunk(this.dataStillToSend);
-            if (value.length > 0) {
-                console.log("sending " + value.length + " bytes as indication");
-                this._updateValueCallback(value);
-            }
-        } else {
-            console.log("don't have more data to indicate");
+        switch (this.state) {
+            case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
+                if (this.dataStillToSend.length > 0) {
+                    var value = this.getNextChunk(this.dataStillToSend);
+                    if (value.length > 0) {
+                        console.log("sending " + value.length + " bytes as indication");
+                        this._updateValueCallback(value);
+                    }
+                } else {
+                    console.log("don't have more data to indicate");
+                }
+                if (this.dataStillToSend.length = 0) {
+                    this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
+                }
+
+                break;
+            default:
+                console.log("ERROR unexpected pairing state");
+                this.state = this.PAIRING_IDLE;
         }
     } else {
         console.log("don't have updateValueCallback on indicate");
+        this.state = this.PAIRING_IDLE;
     }
 };
 
