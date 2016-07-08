@@ -4,7 +4,7 @@ var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
-function UserSpecificDataInputOutputCharacteristic() {
+function UserSpecificDataInputOutputCharacteristic(keys) {
     UserSpecificDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee202-5501-11e4-916c-0800200c9a66',
         uuid: 'a92ee202550111e4916c0800200c9a66',
@@ -16,6 +16,7 @@ function UserSpecificDataInputOutputCharacteristic() {
             })
         ]
     });
+    keys: keys
 }
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);

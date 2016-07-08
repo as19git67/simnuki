@@ -8,22 +8,16 @@ var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
-function ParingGeneralDataInputOutputCharacteristic(publicKey, privateKey) {
-    if (_.isString(publicKey)) {
-        this.publicKey = new Buffer(publicKey, 'hex');
+function ParingGeneralDataInputOutputCharacteristic(keys) {
+    if (_.isString(keys.slPrivateKey)) {
+        this.slPrivateKey = new Buffer(keys.slPrivateKey, 'hex');
     } else {
-        if (_.isArray(publicKey)) {
-            this.publicKey = new Buffer(publicKey);
-        }
-    }
-    if (_.isString(privateKey)) {
-        this.privateKey = new Buffer(privateKey, 'hex');
-    } else {
-        if (_.isArray(privateKey)) {
-            this.privateKey = new Buffer(privateKey);
+        if (_.isArray(keys.slPrivateKey)) {
+            this.slPrivateKey = new Buffer(keys.slPrivateKey);
         }
     }
     this.state = this.PAIRING_IDLE;
+    this.keys = keys;
 
     ParingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
@@ -43,6 +37,7 @@ util.inherits(ParingGeneralDataInputOutputCharacteristic, BlenoCharacteristic);
 ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE = 0;
 ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
 ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY = 2;
+ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE = 3;
 
 
 ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
@@ -58,6 +53,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (da
 };
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
+    var cmdId;
     console.log("ParingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -70,20 +66,56 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
         } else if (data.length > 200) {
             callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
         } else {
-            var rCmd = data.readUInt16LE(0);
-            var cmdId = data.readUInt16LE(2);
             switch (this.state) {
                 case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE:
+                    var rCmd = data.readUInt16LE(0);
+                    cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-                        var wCmd = new Buffer(2);
-                        wCmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
-                        var responseData = Buffer.concat([wCmd, this.publicKey]);
-                        var checksum = crc.crc16ccitt(responseData);
-                        var checksumBuffer = new Buffer(2);
-                        checksumBuffer.writeUInt16LE(checksum);
-                        this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
-                        console.log("prepared to send public key data with checksum:", this.dataStillToSend);
-                        this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
+                        var slPublicKey = new Buffer(0);
+                        if (_.isString(this.keys.slPublicKey)) {
+                            slPublicKey = new Buffer(keys.slPublicKey, 'hex');
+                        } else {
+                            if (_.isArray(keys.slPublicKey)) {
+                                slPublicKey = new Buffer(keys.slPublicKey);
+                            }
+                        }
+                        if (slPublicKey.length > 0) {
+                            var wCmd = new Buffer(2);
+                            wCmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
+                            var responseData = Buffer.concat([wCmd, slPublicKey]);
+                            var checksum = crc.crc16ccitt(responseData);
+                            var checksumBuffer = new Buffer(2);
+                            checksumBuffer.writeUInt16LE(checksum);
+                            this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
+                            console.log("prepared to send public key data with checksum:", this.dataStillToSend);
+                            this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
+
+                            callback(this.RESULT_SUCCESS);
+                        } else {
+                            console.log("ERROR missing SL public key");
+                            callback(this.RESULT_UNLIKELY_ERROR);
+                        }
+                    }
+                    else {
+                        console.log("command or command identifier wrong");
+                        callback(this.RESULT_UNLIKELY_ERROR);
+                    }
+                    break;
+                case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY:
+                    cmdId = data.readUInt16LE(0);
+                    if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
+                        this.keys.clPublicKey = data.slice(2, data.length - 2);
+                        console.log("CL PUBKEY:", this.keys.clPublicKey);
+
+                        // todo: calculate DH Key k using function dh1
+                        // crypto_scalarmult_curve25519(s,sk,pk)
+
+                        // derive a longterm shared secret key s from k using function kdf1
+                        // static const unsigned char _0[16];
+                        // static const unsigned char sigma[16] = "expand 32-byte k";
+                        // crypto_core_hsalsa20(k,_0,s,sigma)
+
+                        this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
                         callback(this.RESULT_SUCCESS);
                     }
@@ -91,6 +123,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         console.log("command or command identifier wrong");
                         callback(this.RESULT_UNLIKELY_ERROR);
                     }
+
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
@@ -120,6 +153,10 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
                 }
             } else {
                 console.log("don't have more data to indicate");
+            }
+
+            if (this.dataStillToSend.length = 0) {
+                this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
             }
 
             break;
