@@ -73,10 +73,10 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         var slPublicKey = new Buffer(0);
                         if (_.isString(this.keys.slPublicKey)) {
-                            slPublicKey = new Buffer(keys.slPublicKey, 'hex');
+                            slPublicKey = new Buffer(this.keys.slPublicKey, 'hex');
                         } else {
-                            if (_.isArray(keys.slPublicKey)) {
-                                slPublicKey = new Buffer(keys.slPublicKey);
+                            if (_.isArray(this.keys.slPublicKey)) {
+                                slPublicKey = new Buffer(this.keys.slPublicKey);
                             }
                         }
                         if (slPublicKey.length > 0) {
