@@ -2,7 +2,7 @@ var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var crc = require('crc');
-var sodium = require('sodium');
+var sodium = require('sodium').api;
 var HSalsa20 = require('./hsalsa20');
 
 var bleno = require('bleno');
