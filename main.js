@@ -5,9 +5,9 @@ var publicKey = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B7
 var privateKey = "0123452654624657165961";
 
 var keys = {
-    slPublicKey: publicKey,
-    slPrivateKey: privateKey,
-    clPublicKey: null
+    slPk: publicKey,
+    slSk: privateKey,
+    clPk: null
 };
 
 var KeyturnerInitializationService = require('./keyturner-initialization-service');

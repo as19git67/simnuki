@@ -133,3 +133,6 @@ hsalsa20.crypto_core = function(outv, inv, k, c)
 	return 0;
 };
 
+
+module.exports = hsalsa20;
+

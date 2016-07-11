@@ -2,20 +2,13 @@ var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var crc = require('crc');
-
+var hsalsa20 = require('./hsalsa');
 
 var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
 function ParingGeneralDataInputOutputCharacteristic(keys) {
-    if (_.isString(keys.slPrivateKey)) {
-        this.slPrivateKey = new Buffer(keys.slPrivateKey, 'hex');
-    } else {
-        if (_.isArray(keys.slPrivateKey)) {
-            this.slPrivateKey = new Buffer(keys.slPrivateKey);
-        }
-    }
     this.state = this.PAIRING_IDLE;
     this.keys = keys;
     this.dataStillToSend = new Buffer(0);
@@ -72,18 +65,18 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-                        var slPublicKey = new Buffer(0);
-                        if (_.isString(this.keys.slPublicKey)) {
-                            slPublicKey = new Buffer(this.keys.slPublicKey, 'hex');
+                        var slPk = new Buffer(0);
+                        if (_.isString(this.keys.slPk)) {
+                            slPk = new Buffer(this.keys.slPk, 'hex');
                         } else {
-                            if (_.isArray(this.keys.slPublicKey)) {
-                                slPublicKey = new Buffer(this.keys.slPublicKey);
+                            if (_.isArray(this.keys.slPk)) {
+                                slPk = new Buffer(this.keys.slPk);
                             }
                         }
-                        if (slPublicKey.length > 0) {
+                        if (slPk.length > 0) {
                             var wCmd = new Buffer(2);
                             wCmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
-                            var responseData = Buffer.concat([wCmd, slPublicKey]);
+                            var responseData = Buffer.concat([wCmd, slPk]);
                             var checksum = crc.crc16ccitt(responseData);
                             var checksumBuffer = new Buffer(2);
                             checksumBuffer.writeUInt16LE(checksum);
@@ -107,11 +100,22 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                 case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-                        this.keys.clPublicKey = data.slice(2, data.length - 2);
-                        console.log("CL PUBKEY:", this.keys.clPublicKey);
+                        this.keys.clPk = data.slice(2, data.length - 2);
+                        console.log("CL PUBKEY:", this.keys.clPk);
+
+                        var slSk = new Buffer(0);
+                        if (_.isString(this.keys.slSk)) {
+                            slSk = new Buffer(this.keys.slSk, 'hex');
+                        } else {
+                            if (_.isArray(this.keys.slSk)) {
+                                slSk = new Buffer(this.keys.slSk);
+                            }
+                        }
 
                         // todo: calculate DH Key k using function dh1
                         // crypto_scalarmult_curve25519(s,sk,pk)
+                        var s = sodium.crypto_scalarmult(slSk, this.keys.clPk);
+                        console.log("SL DH Key from CL PubKey and CL SK: ", s);
 
                         // derive a longterm shared secret key s from k using function kdf1
                         // static const unsigned char _0[16];
