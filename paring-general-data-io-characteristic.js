@@ -2,7 +2,8 @@ var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var crc = require('crc');
-var hsalsa20 = require('./hsalsa');
+var sodium = require('sodium');
+var HSalsa20 = require('./hsalsa');
 
 var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
@@ -113,14 +114,20 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         }
 
                         // todo: calculate DH Key k using function dh1
-                        // crypto_scalarmult_curve25519(s,sk,pk)
-                        var s = sodium.crypto_scalarmult(slSk, this.keys.clPk);
+                        // crypto_scalarmult_curve25519(k,sk,pk)
+                        var k = sodium.crypto_scalarmult(slSk, this.keys.clPk);
                         console.log("SL DH Key from CL PubKey and CL SK: ", s);
 
                         // derive a longterm shared secret key s from k using function kdf1
                         // static const unsigned char _0[16];
                         // static const unsigned char sigma[16] = "expand 32-byte k";
-                        // crypto_core_hsalsa20(k,_0,s,sigma)
+                        // crypto_core_hsalsa20(firstKey,_0,sharedKey,sigma)
+                        var hsalsa20 = new HSalsa20();
+                        var s = new Buffer(32);
+                        var inv = new Buffer(16);
+                        var c = new Buffer("expand 32-byte k");
+                        hsalsa20.crypto_core(s, inv, k, c);
+                        console.log("derived shared key: ", s);
 
                         this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
