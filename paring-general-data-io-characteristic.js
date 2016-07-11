@@ -3,7 +3,7 @@ var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var crc = require('crc');
 var sodium = require('sodium');
-var HSalsa20 = require('./hsalsa');
+var HSalsa20 = require('./hsalsa20');
 
 var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
