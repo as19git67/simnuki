@@ -67,7 +67,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         var slPk = new Buffer(0);
-                        if (!Buffer.isBuffer(this.keys.slPk)) {
+                        if (Buffer.isBuffer(this.keys.slPk)) {
+                            slPk = this.keys.slPk;
+                        } else {
                             if (_.isString(this.keys.slPk)) {
                                 slPk = new Buffer(this.keys.slPk, 'hex');
                             } else {
@@ -114,7 +116,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         this.keys.slSk = slKeys.sk().get();
 
                         var slSk = new Buffer(0);
-                        if (!Buffer.isBuffer(this.keys.slSk)) {
+                        if (Buffer.isBuffer(this.keys.slSk)) {
+                            slSk = this.keys.slSk;
+                        } else {
                             if (_.isString(this.keys.slSk)) {
                                 slSk = new Buffer(this.keys.slSk, 'hex');
                             } else {
