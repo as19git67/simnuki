@@ -107,9 +107,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         this.keys.clPk = data.slice(2, data.length - 2);
-                        console.log("CL PUBKEY:", this.keys.clPk);
+                        console.log("CL PUBKEY:" + this.keys.clPk);
 
-                        console.log("Creating new CL key pair");
+                        console.log("Creating new CL key pair...");
                         var slKeys = new sodium.Key.ECDH();
                         // todo use generated slPk instead the one set in main.js
                         //this.keys.slPk = slKeys.pk().get();
@@ -130,9 +130,8 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         // todo: calculate DH Key k using function dh1
                         // crypto_scalarmult_curve25519(k,secretKey,pk)
-                        console.log("slSk.length: " + slSk.length + " clPk.length: " + this.keys.clPk.length);
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
-                        console.log("SL DH Key from CL PubKey and CL SK: ", s);
+                        console.log("SL DH Key from CL PubKey and CL SK: ", k);
 
                         // derive a longterm shared secret key s from k using function kdf1
                         // static const unsigned char _0[16];
