@@ -3,6 +3,13 @@ var _ = require('underscore');
 var hsalsa20 = module.exports = function () {
 };
 
+
+// near clone of Java's casting of integers to bytes
+// warning: doesn't handle negative integers properly
+function toByte(i) {
+    return ((i + 128) % 256) - 128;
+}
+
 _.extend(hsalsa20.prototype, {
 
     ROUNDS: 20,
