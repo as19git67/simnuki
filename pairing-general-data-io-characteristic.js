@@ -47,8 +47,19 @@ ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (da
     return block0;
 };
 
+ParingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = function (cmd, data) {
+    var cmdBuffer = new Buffer(2);
+    cmdBuffer.writeUInt16LE(cmd);
+    var responseData = Buffer.concat([cmdBuffer, data]);
+    var checksum = crc.crc16ccitt(responseData);
+    var checksumBuffer = new Buffer(2);
+    checksumBuffer.writeUInt16LE(checksum);
+    this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
+    console.log("prepared to send:", this.dataStillToSend);
+};
+
 ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId;
+    var cmdId, wCmd;
     console.log("ParingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -80,14 +91,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         }
 
                         if (slPk.length > 0) {
-                            var wCmd = new Buffer(2);
-                            wCmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
-                            var responseData = Buffer.concat([wCmd, slPk]);
-                            var checksum = crc.crc16ccitt(responseData);
-                            var checksumBuffer = new Buffer(2);
-                            checksumBuffer.writeUInt16LE(checksum);
-                            this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
-                            console.log("prepared to send public key data with checksum:", this.dataStillToSend);
+                            this.prepareDataToSend(nukiConstants.CMD_ID_PUBLIC_KEY, slPk);
                             this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY;
 
                             callback(this.RESULT_SUCCESS);
@@ -134,11 +138,12 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                             }
                         }
 
-                        // todo: calculate DH Key k using function dh1
-                        // crypto_scalarmult_curve25519(k,secretKey,pk)
                         console.log("slPK", slPk);
                         console.log("slSK", slSk);
                         console.log("clPK", this.keys.clPk);
+
+                        // Create Diffie-Hellman key from nuki secret key and clients public key
+                        // crypto_scalarmult_curve25519(k,secretKey,pk)
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
                         console.log("SL DH Key from SL SK and CL PK: ", k);
 
@@ -153,6 +158,21 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         var c = new Buffer("expand 32-byte k");
                         hsalsa20.crypto_core(s, inv, k, c);
                         console.log("derived shared key: ", s);
+
+
+                        var nonce = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                        sodium.api.randombytes_buf(nonce);
+                        // todo remove hardcoded challenge
+                        nonce = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
+                        if (nonce.length != nukiConstants.NUKI_NONCEBYTES) {
+                            console.log("Nonce length (" + nonce.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                            this.state = this.PAIRING_IDLE;
+                            callback(this.RESULT_UNLIKELY_ERROR);
+                            return;
+                        }
+
+                        console.log("Creating one time challenge...");
+                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
 
                         this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
