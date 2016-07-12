@@ -126,6 +126,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         // todo: calculate DH Key k using function dh1
                         // crypto_scalarmult_curve25519(k,secretKey,pk)
+                        console.log("slSk.length: " + slSk.length + " clPk.length: " + this.keys.clPk.length);
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
                         console.log("SL DH Key from CL PubKey and CL SK: ", s);
 
