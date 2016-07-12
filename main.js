@@ -2,11 +2,11 @@ var bleno = require('bleno');
 
 // todo: read from file or generate keys if not in file
 var publicKey = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
-var privateKey = "0123452654624657165961";
+var secretKey = "012345265462465716596ABCDEF1599297ADFFE75685365578954446435BACA1";
 
 var keys = {
     slPk: publicKey,
-    slSk: privateKey,
+    slSk: secretKey,
     clPk: null
 };
 

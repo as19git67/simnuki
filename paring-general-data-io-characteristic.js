@@ -2,7 +2,7 @@ var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var crc = require('crc');
-var sodium = require('sodium').api;
+var sodium = require('sodium');
 var HSalsa20 = require('./hsalsa20');
 
 var bleno = require('bleno');
@@ -13,7 +13,7 @@ function ParingGeneralDataInputOutputCharacteristic(keys) {
     this.state = this.PAIRING_IDLE;
     this.keys = keys;
     this.dataStillToSend = new Buffer(0);
-    
+
     ParingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
         uuid: 'a92ee101550111e4916c0800200c9a66',
@@ -67,13 +67,16 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         var slPk = new Buffer(0);
-                        if (_.isString(this.keys.slPk)) {
-                            slPk = new Buffer(this.keys.slPk, 'hex');
-                        } else {
-                            if (_.isArray(this.keys.slPk)) {
-                                slPk = new Buffer(this.keys.slPk);
+                        if (!_.isBuffer(this.keys.slPk)) {
+                            if (_.isString(this.keys.slPk)) {
+                                slPk = new Buffer(this.keys.slPk, 'hex');
+                            } else {
+                                if (_.isArray(this.keys.slPk)) {
+                                    slPk = new Buffer(this.keys.slPk);
+                                }
                             }
                         }
+
                         if (slPk.length > 0) {
                             var wCmd = new Buffer(2);
                             wCmd.writeUInt16LE(nukiConstants.CMD_ID_PUBLIC_KEY);
@@ -104,18 +107,26 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         this.keys.clPk = data.slice(2, data.length - 2);
                         console.log("CL PUBKEY:", this.keys.clPk);
 
+                        console.log("Creating new CL key pair");
+                        var slKeys = new sodium.Key.ECDH();
+                        // todo use generated slPk instead the one set in main.js
+                        //this.keys.slPk = slKeys.pk().get();
+                        this.keys.slSk = slKeys.sk().get();
+
                         var slSk = new Buffer(0);
-                        if (_.isString(this.keys.slSk)) {
-                            slSk = new Buffer(this.keys.slSk, 'hex');
-                        } else {
-                            if (_.isArray(this.keys.slSk)) {
-                                slSk = new Buffer(this.keys.slSk);
+                        if (!_.isBuffer(this.keys.slSk)) {
+                            if (_.isString(this.keys.slSk)) {
+                                slSk = new Buffer(this.keys.slSk, 'hex');
+                            } else {
+                                if (_.isArray(this.keys.slSk)) {
+                                    slSk = new Buffer(this.keys.slSk);
+                                }
                             }
                         }
 
                         // todo: calculate DH Key k using function dh1
-                        // crypto_scalarmult_curve25519(k,sk,pk)
-                        var k = sodium.crypto_scalarmult(slSk, this.keys.clPk);
+                        // crypto_scalarmult_curve25519(k,secretKey,pk)
+                        var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
                         console.log("SL DH Key from CL PubKey and CL SK: ", s);
 
                         // derive a longterm shared secret key s from k using function kdf1
