@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var hsalsa20 = module.exports = function () {
 };
 
