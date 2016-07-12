@@ -107,9 +107,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         this.keys.clPk = data.slice(2, data.length - 2);
-                        console.log("CL PUBKEY:" + this.keys.clPk);
+                        console.log("CL PUBKEY:", this.keys.clPk);
 
-                        console.log("Creating new CL key pair...");
+                        console.log("Creating new SL key pair...");
                         var slKeys = new sodium.Key.ECDH();
                         // todo use generated slPk instead the one set in main.js
                         //this.keys.slPk = slKeys.pk().get();
@@ -130,8 +130,10 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         // todo: calculate DH Key k using function dh1
                         // crypto_scalarmult_curve25519(k,secretKey,pk)
+                        console.log("slSK", slSk);
+                        console.log("clPK", this.keys.clPk);
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
-                        console.log("SL DH Key from CL PubKey and CL SK: ", k);
+                        console.log("SL DH Key from SL SK and CL PK: ", k);
 
                         // derive a longterm shared secret key s from k using function kdf1
                         // static const unsigned char _0[16];
@@ -140,6 +142,8 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         var hsalsa20 = new HSalsa20();
                         var s = new Buffer(32);
                         var inv = new Buffer(16);
+                        inv.fill(0);
+                        console.log("buffer empty?", inv);
                         var c = new Buffer("expand 32-byte k");
                         hsalsa20.crypto_core(s, inv, k, c);
                         console.log("derived shared key: ", s);
