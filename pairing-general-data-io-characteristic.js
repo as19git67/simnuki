@@ -59,7 +59,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functio
 };
 
 ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId, wCmd;
+    var cmdId;
     console.log("ParingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -173,6 +173,11 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         console.log("Creating one time challenge...");
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
+                        var value = this.getNextChunk(this.dataStillToSend);
+                        if (this._updateValueCallback && value.length > 0) {
+                            console.log("sending " + value.length + " bytes");
+                            this._updateValueCallback(value);
+                        }
 
                         this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
