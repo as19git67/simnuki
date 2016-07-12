@@ -1,12 +1,13 @@
 var bleno = require('bleno');
+var sodium = require('sodium');
 
 // todo: read from file or generate keys if not in file
-var publicKey = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
-var secretKey = "012345265462465716596ABCDEF1599297ADFFE75685365578954446435BACA1";
+//var publicKey = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
+//var secretKey = "012345265462465716596ABCDEF1599297ADFFE75685365578954446435BACA1";
 
 var keys = {
-    slPk: publicKey,
-    slSk: secretKey,
+    slPk: null,
+    slSk: null,
     clPk: null
 };
 
@@ -42,6 +43,10 @@ bleno.on('advertisingStart', function (error) {
 
 bleno.on('accept', function (address) {
     console.log('on -> accept: ' + address);
+    console.log("Creating new SL key pair...");
+    var slKeys = new sodium.Key.ECDH();
+    keys.slPk = slKeys.pk().get();
+    keys.slSk = slKeys.sk().get();
     keyturnerPairingService = new KeyturnerPairingService(keys);
     bleno.setServices([
         keyturnerInitializationService,

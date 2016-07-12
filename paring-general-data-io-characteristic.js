@@ -109,12 +109,18 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         this.keys.clPk = data.slice(2, data.length - 2);
                         console.log("CL PUBKEY:", this.keys.clPk);
 
-                        console.log("Creating new SL key pair...");
-                        var slKeys = new sodium.Key.ECDH();
-                        // todo use generated slPk instead the one set in main.js
-                        //this.keys.slPk = slKeys.pk().get();
-                        this.keys.slSk = slKeys.sk().get();
-
+                        var slPk = new Buffer(0);
+                        if (Buffer.isBuffer(this.keys.slPk)) {
+                            slPk = this.keys.slPk;
+                        } else {
+                            if (_.isString(this.keys.slPk)) {
+                                slPk = new Buffer(this.keys.slPk, 'hex');
+                            } else {
+                                if (_.isArray(this.keys.slPk)) {
+                                    slPk = new Buffer(this.keys.slPk);
+                                }
+                            }
+                        }
                         var slSk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slSk)) {
                             slSk = this.keys.slSk;
@@ -130,6 +136,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         // todo: calculate DH Key k using function dh1
                         // crypto_scalarmult_curve25519(k,secretKey,pk)
+                        console.log("slPK", slPk);
                         console.log("slSK", slSk);
                         console.log("clPK", this.keys.clPk);
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
@@ -143,7 +150,6 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         var s = new Buffer(32);
                         var inv = new Buffer(16);
                         inv.fill(0);
-                        console.log("buffer empty?", inv);
                         var c = new Buffer("expand 32-byte k");
                         hsalsa20.crypto_core(s, inv, k, c);
                         console.log("derived shared key: ", s);
