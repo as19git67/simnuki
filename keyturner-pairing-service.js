@@ -3,7 +3,7 @@ var bleno = require('bleno');
 
 var BlenoPrimaryService = bleno.PrimaryService;
 
-var PairingGeneralDataInputOutputCharacteristic = require('./paring-general-data-io-characteristic');
+var PairingGeneralDataInputOutputCharacteristic = require('./pairing-general-data-io-characteristic');
 
 function KeyturnerPairingService(keys) {
     KeyturnerPairingService.super_.call(this, {
