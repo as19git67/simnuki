@@ -9,12 +9,12 @@ var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
-function ParingGeneralDataInputOutputCharacteristic(keys) {
+function PairingGeneralDataInputOutputCharacteristic(keys) {
     this.state = this.PAIRING_IDLE;
     this.keys = keys;
     this.dataStillToSend = new Buffer(0);
 
-    ParingGeneralDataInputOutputCharacteristic.super_.call(this, {
+    PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
         uuid: 'a92ee101550111e4916c0800200c9a66',
         properties: ['write', 'indicate'],
@@ -27,15 +27,16 @@ function ParingGeneralDataInputOutputCharacteristic(keys) {
     });
 }
 
-util.inherits(ParingGeneralDataInputOutputCharacteristic, BlenoCharacteristic);
+util.inherits(PairingGeneralDataInputOutputCharacteristic, BlenoCharacteristic);
 
-ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE = 0;
-ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
-ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY = 2;
-ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE = 3;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE = 0;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY = 1;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY = 2;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE = 3;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR = 4;
 
 
-ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
+PairingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
     var block0;
     if (data.length > 20) {
         block0 = data.slice(0, 20);
@@ -47,7 +48,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (da
     return block0;
 };
 
-ParingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = function (cmd, data) {
+PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = function (cmd, data) {
     var cmdBuffer = new Buffer(2);
     cmdBuffer.writeUInt16LE(cmd);
     var responseData = Buffer.concat([cmdBuffer, data]);
@@ -58,9 +59,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functio
     console.log("prepared to send:", this.dataStillToSend);
 };
 
-ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
+PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var cmdId;
-    console.log("ParingGeneralDataInputOutputCharacteristic", data);
+    console.log("PairingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
     var crcSumRetrieved = data.readUInt16LE(data.length - 2);
@@ -73,7 +74,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
             callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
         } else {
             switch (this.state) {
-                case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE:
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE:
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
@@ -92,7 +93,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 
                         if (slPk.length > 0) {
                             this.prepareDataToSend(nukiConstants.CMD_ID_PUBLIC_KEY, slPk);
-                            this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY;
+                            this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY;
 
                             callback(this.RESULT_SUCCESS);
                         } else {
@@ -107,7 +108,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         callback(this.RESULT_UNLIKELY_ERROR);
                     }
                     break;
-                case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY:
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         this.keys.clPk = data.slice(2, data.length - 2);
@@ -179,7 +180,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                             this._updateValueCallback(value);
                         }
 
-                        this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
                         callback(this.RESULT_SUCCESS);
                     }
@@ -189,6 +190,9 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
                         callback(this.RESULT_UNLIKELY_ERROR);
                     }
 
+                    break;
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR:
+                    console.log("waiting for authenticator from CL");
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
@@ -204,14 +208,14 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (
 };
 
 
-ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
-    console.log('ParingGeneralDataInputOutputCharacteristic - onSubscribe');
+PairingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
+    console.log('PairingGeneralDataInputOutputCharacteristic - onSubscribe');
 
     this._updateValueCallback = updateValueCallback;
 
     if (this.dataStillToSend.length > 0) {
         switch (this.state) {
-            case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
+            case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
 
                 var value = this.getNextChunk(this.dataStillToSend);
                 if (value.length > 0) {
@@ -220,7 +224,7 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
                 }
 
                 if (this.dataStillToSend.length === 0) {
-                    this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
+                    this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
                 }
 
                 break;
@@ -233,27 +237,38 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (max
     }
 };
 
-ParingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function () {
-    console.log('ParingGeneralDataInputOutputCharacteristic - onUnsubscribe');
+PairingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function () {
+    console.log('PairingGeneralDataInputOutputCharacteristic - onUnsubscribe');
 
     this._updateValueCallback = null;
 };
 
-ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
-    console.log("ParingGeneralDataInputOutputCharacteristic indicate");
+PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
+    console.log("PairingGeneralDataInputOutputCharacteristic indicate");
     if (this.dataStillToSend.length > 0) {
         if (this._updateValueCallback) {
+            var value;
             switch (this.state) {
-                case ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
-                    var value = this.getNextChunk(this.dataStillToSend);
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
+                    value = this.getNextChunk(this.dataStillToSend);
                     if (value.length > 0) {
                         console.log("sending " + value.length + " bytes as indication");
                         this._updateValueCallback(value);
                     }
                     if (this.dataStillToSend.length === 0) {
-                        this.state = ParingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
                     }
 
+                    break;
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE:
+                    value = this.getNextChunk(this.dataStillToSend);
+                    if (value.length > 0) {
+                        console.log("sending " + value.length + " bytes as indication");
+                        this._updateValueCallback(value);
+                    }
+                    if (this.dataStillToSend.length === 0) {
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR;
+                    }
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
@@ -269,4 +284,4 @@ ParingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
 };
 
 
-module.exports = ParingGeneralDataInputOutputCharacteristic;
+module.exports = PairingGeneralDataInputOutputCharacteristic;
