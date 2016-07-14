@@ -219,12 +219,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // Step 14: verify authenticator
                         if (Buffer.compare(clCr, cr) === 0) {
                             console.log("Authenticators verified ok");
+
                             // Step 15: send second challenge
                             console.log("Creating second one time challenge...");
                             this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                             sodium.api.randombytes_buf(this.keys.sc);
-                            // todo remove hardcoded challenge
-                            this.keys.sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
+                            // // todo remove hardcoded challenge
+                            // this.keys.sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
                             if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
                                 console.log("Nonce length (" + this.keys.sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
                                 this.state = this.PAIRING_IDLE;
