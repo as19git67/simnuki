@@ -60,7 +60,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId;
+    var cmdId, slPk;
     console.log("PairingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -78,7 +78,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-                        var slPk = new Buffer(0);
+                        slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;
                         } else {
@@ -114,7 +114,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.keys.clPk = data.slice(2, data.length - 2);
                         console.log("CL PUBKEY:", this.keys.clPk);
 
-                        var slPk = new Buffer(0);
+                        slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;
                         } else {
@@ -173,6 +173,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             return;
                         }
 
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
                         var value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
@@ -180,7 +181,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this._updateValueCallback(value);
                         }
 
-                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
 
                         var r = Buffer.concat([this.keys.clPk, slPk, nonce]);
                         // use HMAC-SHA256 to create the authenticator
@@ -197,7 +197,18 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                     break;
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR:
-                    console.log("waiting for authenticator from CL");
+                    cmdId = data.readUInt16LE(0);
+                    if (cmdId === nukiConstants.CMD_AUTHORIZATION_AUTHENTICATOR) {
+                        var clAuthenticator = data.slice(2, data.length - 2);
+                        console.log("CL sent authorization authenticator", clAuthenticator);
+
+                        // todo verify authenticator
+                    }
+                    else {
+                        console.log("command or command identifier wrong");
+                        this.state = this.PAIRING_IDLE;
+                        callback(this.RESULT_UNLIKELY_ERROR);
+                    }
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
