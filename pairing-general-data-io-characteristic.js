@@ -153,14 +153,15 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // static const unsigned char sigma[16] = "expand 32-byte k";
                         // crypto_core_hsalsa20(firstKey,_0,sharedKey,sigma)
                         var hsalsa20 = new HSalsa20();
-                        var s = new Buffer(32);
+                        var sharedSecret = new Buffer(32);
                         var inv = new Buffer(16);
                         inv.fill(0);
                         var c = new Buffer("expand 32-byte k");
-                        hsalsa20.crypto_core(s, inv, k, c);
-                        console.log("derived shared key: ", s);
+                        hsalsa20.crypto_core(sharedSecret, inv, k, c);
+                        console.log("derived shared key: ", sharedSecret);
 
 
+                        console.log("Creating one time challenge...");
                         var nonce = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                         sodium.api.randombytes_buf(nonce);
                         // todo remove hardcoded challenge
@@ -172,15 +173,19 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             return;
                         }
 
-                        console.log("Creating one time challenge...");
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
                         var value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
-                            console.log("sending " + value.length + " bytes");
+                            console.log("sending challenge: " + value.length + " bytes");
                             this._updateValueCallback(value);
                         }
 
                         this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
+
+                        var r = Buffer.concat([this.keys.clPk, slPk, nonce]);
+                        // use HMAC-SHA256 to create the authenticator
+                        var a = crypto.createHmac('SHA256', sharedSecret).update(r);
+                        console.log("Authorization authenticator from SL", a);
 
                         callback(this.RESULT_SUCCESS);
                     }
