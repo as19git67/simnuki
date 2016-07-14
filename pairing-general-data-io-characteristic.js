@@ -180,7 +180,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
-                            console.log("sending challenge: " + value.length + " bytes");
+                            console.log("sending challenge 1: " + value.length + " bytes");
                             this._updateValueCallback(value);
                         }
 
@@ -223,9 +223,11 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
-                            console.log("sending challenge: " + value.length + " bytes");
+                            console.log("sending challenge 2: " + value.length + " bytes");
                             this._updateValueCallback(value);
                         }
+
+                        callback(this.RESULT_SUCCESS);
                     } else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
@@ -241,7 +243,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // todo verify authenticator
                         // todo store new user and generate new authorization-id
                         // todo send new authorization-id
-                        
+
                         // todo continue with state machine
 
                     } else {
