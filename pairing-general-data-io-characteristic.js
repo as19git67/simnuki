@@ -209,6 +209,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         console.log("CL authorization authenticator", clCr);
 
                         // create authenticator with data from server side
+                        console.log("keys:", this.keys.slPk, this.keys.clPk, sc);
+                        
                         r = Buffer.concat([this.keys.slPk, this.keys.clPk, sc]);
                         // use HMAC-SHA256 to create the authenticator
                         var cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
