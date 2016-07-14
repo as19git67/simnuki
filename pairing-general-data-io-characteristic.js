@@ -63,7 +63,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId, slPk, nonce, value;
+    var cmdId, slPk, sc, value;
     console.log("PairingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -165,19 +165,19 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
 
                         console.log("Creating one time challenge...");
-                        nonce = new Buffer(nukiConstants.NUKI_NONCEBYTES);
-                        sodium.api.randombytes_buf(nonce);
+                        sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                        sodium.api.randombytes_buf(sc);
                         // todo remove hardcoded challenge
-                        nonce = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
-                        if (nonce.length != nukiConstants.NUKI_NONCEBYTES) {
-                            console.log("Nonce length (" + nonce.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                        sc = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
+                        if (sc.length != nukiConstants.NUKI_NONCEBYTES) {
+                            console.log("Nonce length (" + sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_UNLIKELY_ERROR);
                             return;
                         }
 
                         this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
-                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
+                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, sc);
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
                             console.log("sending challenge 1: " + value.length + " bytes");
@@ -185,7 +185,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         }
 
 
-                        var r = Buffer.concat([this.keys.clPk, slPk, nonce]);
+                        var r = Buffer.concat([this.keys.clPk, slPk, sc]);
                         // use HMAC-SHA256 to create the authenticator
                         var a = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", a);
@@ -202,25 +202,32 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_AUTHENTICATOR) {
-                        var clAuthenticator = data.slice(2, data.length - 2);
-                        console.log("CL sent authorization authenticator", clAuthenticator);
+                        var clCr = data.slice(2, data.length - 2);
+                        console.log("CL authorization authenticator", clCr);
+
+                        // create authenticator with data from server side
+                        r = Buffer.concat([this.keys.slPk, this.keys.clPk, sc]);
+                        // use HMAC-SHA256 to create the authenticator
+                        var cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
+                        console.log("SL Authorization authenticator", cr);
 
                         // todo 14: verify authenticator
 
-                        // todo 15: send second challenge
+
+                        // step 15: send second challenge
                         console.log("Creating second one time challenge...");
-                        nonce = new Buffer(nukiConstants.NUKI_NONCEBYTES);
-                        sodium.api.randombytes_buf(nonce);
+                        sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                        sodium.api.randombytes_buf(sc);
                         // todo remove hardcoded challenge
-                        nonce = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
-                        if (nonce.length != nukiConstants.NUKI_NONCEBYTES) {
-                            console.log("Nonce length (" + nonce.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                        sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
+                        if (sc.length != nukiConstants.NUKI_NONCEBYTES) {
+                            console.log("Nonce length (" + sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_UNLIKELY_ERROR);
                             return;
                         }
                         this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2;
-                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, nonce);
+                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, sc);
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
                             console.log("sending challenge 2: " + value.length + " bytes");
