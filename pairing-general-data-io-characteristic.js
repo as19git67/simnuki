@@ -142,6 +142,9 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             }
                         }
 
+                        this.keys.slPk = slPk;
+                        this.keys.slSk = slSk;
+
                         console.log("slPK", slPk);
                         console.log("slSK", slSk);
                         console.log("clPK", this.keys.clPk);
