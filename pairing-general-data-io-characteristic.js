@@ -210,14 +210,14 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                         // create authenticator with data from server side
                         console.log("keys:", this.keys.slPk, this.keys.clPk, sc);
-                        
+
                         r = Buffer.concat([this.keys.slPk, this.keys.clPk, sc]);
                         // use HMAC-SHA256 to create the authenticator
                         var cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", cr);
 
                         // Step 14: verify authenticator
-                        if (Buffer.compare(clCr, cr)) {
+                        if (Buffer.compare(clCr, cr) === 0) {
                             console.log("Authenticators verifed ok");
                             // Step 15: send second challenge
                             console.log("Creating second one time challenge...");
