@@ -185,7 +185,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                         var r = Buffer.concat([this.keys.clPk, slPk, nonce]);
                         // use HMAC-SHA256 to create the authenticator
-                        var a = crypto.createHmac('SHA256', sharedSecret).update(r);
+                        var a = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
                         console.log("Authorization authenticator from SL", a);
 
                         callback(this.RESULT_SUCCESS);
