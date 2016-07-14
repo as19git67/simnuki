@@ -159,12 +159,12 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // static const unsigned char sigma[16] = "expand 32-byte k";
                         // crypto_core_hsalsa20(firstKey,_0,sharedKey,sigma)
                         var hsalsa20 = new HSalsa20();
-                        var sharedSecret = new Buffer(32);
+                        this.keys.sharedSecret = new Buffer(32);
                         var inv = new Buffer(16);
                         inv.fill(0);
                         var c = new Buffer("expand 32-byte k");
-                        hsalsa20.crypto_core(sharedSecret, inv, k, c);
-                        console.log("derived shared key: ", sharedSecret);
+                        hsalsa20.crypto_core(this.keys.sharedSecret, inv, k, c);
+                        console.log("derived shared key: ", this.keys.sharedSecret);
 
 
                         console.log("Creating one time challenge...");
@@ -190,7 +190,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                         var r = Buffer.concat([this.keys.clPk, slPk, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
-                        var a = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
+                        var a = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", a);
 
                         callback(this.RESULT_SUCCESS);
@@ -213,7 +213,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                         r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
-                        var cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
+                        var cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", cr);
 
                         // Step 14: verify authenticator
