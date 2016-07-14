@@ -211,30 +211,35 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         var cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", cr);
 
-                        // todo 14: verify authenticator
+                        // Step 14: verify authenticator
+                        if (Buffer.compare(clCr, cr)) {
+                            console.log("Authenticators verifed ok");
+                            // Step 15: send second challenge
+                            console.log("Creating second one time challenge...");
+                            sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                            sodium.api.randombytes_buf(sc);
+                            // todo remove hardcoded challenge
+                            sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
+                            if (sc.length != nukiConstants.NUKI_NONCEBYTES) {
+                                console.log("Nonce length (" + sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                                this.state = this.PAIRING_IDLE;
+                                callback(this.RESULT_UNLIKELY_ERROR);
+                                return;
+                            }
+                            this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2;
+                            this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, sc);
+                            value = this.getNextChunk(this.dataStillToSend);
+                            if (this._updateValueCallback && value.length > 0) {
+                                console.log("sending challenge 2: " + value.length + " bytes");
+                                this._updateValueCallback(value);
+                            }
 
-
-                        // step 15: send second challenge
-                        console.log("Creating second one time challenge...");
-                        sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
-                        sodium.api.randombytes_buf(sc);
-                        // todo remove hardcoded challenge
-                        sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
-                        if (sc.length != nukiConstants.NUKI_NONCEBYTES) {
-                            console.log("Nonce length (" + sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                            callback(this.RESULT_SUCCESS);
+                        } else {
+                            console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_UNLIKELY_ERROR);
-                            return;
                         }
-                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2;
-                        this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, sc);
-                        value = this.getNextChunk(this.dataStillToSend);
-                        if (this._updateValueCallback && value.length > 0) {
-                            console.log("sending challenge 2: " + value.length + " bytes");
-                            this._updateValueCallback(value);
-                        }
-
-                        callback(this.RESULT_SUCCESS);
                     } else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
