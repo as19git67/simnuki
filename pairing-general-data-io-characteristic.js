@@ -170,8 +170,10 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         console.log("Creating one time challenge...");
                         this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                         sodium.api.randombytes_buf(this.keys.sc);
-                        // todo remove hardcoded challenge
-                        this.keys.sc = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
+
+                        // // todo remove hardcoded challenge
+                        // this.keys.sc = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
+
                         if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
                             console.log("Nonce length (" + this.keys.sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
                             this.state = this.PAIRING_IDLE;
