@@ -264,6 +264,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // todo send new authorization-id
 
                         // todo continue with state machine
+                        callback(this.RESULT_SUCCESS);
 
                     } else {
                         console.log("command or command identifier wrong");
