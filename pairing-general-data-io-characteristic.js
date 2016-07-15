@@ -211,7 +211,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         console.log("CL authorization authenticator", clCr);
 
                         // create authenticator with data from server side
-                        console.log("keys:", this.keys.slPk, this.keys.clPk, this.keys.sc);
 
                         r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
@@ -226,14 +225,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             console.log("Creating second one time challenge...");
                             this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                             sodium.api.randombytes_buf(this.keys.sc);
-                            // // todo remove hardcoded challenge
                             // this.keys.sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
-                            if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
-                                console.log("Nonce length (" + this.keys.sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
-                                this.state = this.PAIRING_IDLE;
-                                callback(this.RESULT_UNLIKELY_ERROR);
-                                return;
-                            }
+                            // if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
+                            //     console.log("Nonce length (" + this.keys.sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
+                            //     this.state = this.PAIRING_IDLE;
+                            //     callback(this.RESULT_UNLIKELY_ERROR);
+                            //     return;
+                            // }
                             this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2;
                             this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, this.keys.sc);
                             value = this.getNextChunk(this.dataStillToSend);
@@ -257,6 +255,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_DATA:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_DATA) {
+                        // Step 16: client sent authorization data
                         var clAuthData = data.slice(2, data.length - 2);
                         console.log("CL sent authorization data", clAuthData);
 
