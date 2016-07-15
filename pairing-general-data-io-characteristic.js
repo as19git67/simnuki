@@ -33,7 +33,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
         });
     }
 
-    this.slUuid = config.get('uuid');
+    this.slUuid = config.get('slUuid');
     console.log("SL UUID:", this.slUuid);
 
 
