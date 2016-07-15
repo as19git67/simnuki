@@ -311,11 +311,11 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
 
                             var newAuthorizationId = 1;
-                            if (users && _.keys(users).length > 0) {
-                                newAuthorizationId = _.keys(users).length + 1;
+                            if (this.users && _.keys(this.users).length > 0) {
+                                newAuthorizationId = _.keys(this.users).length + 1;
                             }
-                            users[newAuthorizationId] = {name: name, id: id};
-                            config.set("users", users);
+                            this.users[newAuthorizationId] = {name: name, id: id};
+                            config.set("users", this.users);
                             config.save(function (err) {
                                 if (err) {
                                     console.log("Writing configuration with new authorization id failed", err);
@@ -342,20 +342,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             var authIdBuffer = new Buffer(4);
                             authIdBuffer.writeUInt32LE(newAuthorizationId);
 
-                            var uuid = new Buffer(16);
-                            if (Buffer.isBuffer(this.slUuid)) {
-                                uuid = this.slUuid;
-                            } else {
-                                if (_.isString(this.slUuid)) {
-                                    uuid = new Buffer(this.slUuid, 'hex');
-                                } else {
-                                    if (_.isArray(this.slUuid)) {
-                                        uuid = new Buffer(this.slUuid);
-                                    }
-                                }
-                            }
-
-                            var wData = Buffer.concat([cr2, authIdBuffer, uuid, this.keys.sc]);
+                            var wData = Buffer.concat([cr2, authIdBuffer, this.slUuid, this.keys.sc]);
 
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
                             value = this.getNextChunk(this.dataStillToSend);
