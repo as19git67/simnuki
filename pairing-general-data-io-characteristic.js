@@ -307,13 +307,18 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             var id = clAuthData.readUInt32LE(33);
                             console.log("ID: " + id);
                             var nameBuffer = clAuthData.slice(37, 32);
+                            console.log("nameBuffer", nameBuffer);
                             var name = nameBuffer.toString();
                             console.log("Name: " + name);
 
                             var adNonce = clAuthData.slice(59, 32);
                             console.log("Nonce:", adNonce);
 
-                            var newAuthorizationId = users.length + 1;
+
+                            var newAuthorizationId = 1;
+                            if (users && _.keys(users).length > 0) {
+                                newAuthorizationId = _.keys(users).length + 1;
+                            }
                             users[newAuthorizationId] = {name: name, id: id};
                             config.set("users", users);
                             config.save(function (err) {
