@@ -1,3 +1,6 @@
+var fs = require('fs');
+var path = require('path');
+var nconf = require('nconf');
 var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
@@ -9,6 +12,24 @@ var crypto = require('crypto');
 var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
+
+
+var config = new nconf.Provider({
+    env: true,
+    argv: true,
+    store: {
+        type: 'file',
+        file: path.join(__dirname, 'config.json')
+    }
+});
+
+config.set('users', {
+    1: {name: 'anton'}
+});
+
+config.save(function (err) {
+    console.log("Writing configuration failed", err);
+});
 
 function PairingGeneralDataInputOutputCharacteristic(keys) {
     this.state = this.PAIRING_IDLE;
