@@ -291,7 +291,39 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         if (Buffer.compare(clCr, this.keys.cr) === 0) {
                             console.log("Authenticator verified ok");
 
-                            // todo store new user and generate new authorization-id
+                            var idType = clAuthData.readUInt8(32);
+                            switch (idType) {
+                                case 0:
+                                    console.log("Type is App");
+                                    break;
+                                case 1:
+                                    console.log("Type is Bridge");
+                                    break;
+                                case 2:
+                                    console.log("Type is Fob");
+                                    break;
+                            }
+
+                            var id = clAuthData.readUInt32LE(33);
+                            console.log("ID: " + id);
+                            var nameBuffer = clAuthData.slice(37, 32);
+                            var name = nameBuffer.toString();
+                            console.log("Name: " + name);
+
+                            var adNonce = clAuthData.slice(59, 32);
+                            console.log("Nonce:", adNonce);
+
+                            var newAuthorizationId = users.length + 1;
+                            users[newAuthorizationId] = {name: name, id: id};
+                            config.set("users", users);
+                            config.save(function (err) {
+                                if (err) {
+                                    console.log("Writing configuration with new authorization id failed", err);
+                                } else {
+                                    console.log("New user with authorization id " + newAuthorizationId + " added to configuration");
+                                }
+                            });
+
                             // todo send new authorization-id
 
                             // todo continue with state machine
