@@ -46,8 +46,8 @@ var KeyturnerPairingService = require('./keyturner-pairing-service');
 var KeyturnerService = require('./keyturner-service');
 
 var keyturnerInitializationService = new KeyturnerInitializationService();
-var keyturnerPairingService = new KeyturnerPairingService(keys);
-var keyturnerService = new KeyturnerService(keys);
+var keyturnerPairingService = new KeyturnerPairingService(keys, config);
+var keyturnerService = new KeyturnerService(keys, config);
 
 
 bleno.on('stateChange', function (state) {
