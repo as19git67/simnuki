@@ -19,8 +19,7 @@ var slUuid = config.get('uuid');
 if (!slUuid) {
     var arrUUID = new Array(16);
     uuid.v1(null, arrUUID, arrUUID.length);
-    var uuidBuf = new Buffer(arrUUID);
-    config.set('slUuid', uuidBuf);
+    config.set('slUuid', arrUUID);
     config.save(function (err) {
         if (err) {
             console.log("Writing configuration failed", err);
