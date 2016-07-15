@@ -23,13 +23,19 @@ var config = new nconf.Provider({
     }
 });
 
-config.set('users', {
-    1: {name: 'anton'}
-});
-
-config.save(function (err) {
-    console.log("Writing configuration failed", err);
-});
+var users = config.get('users');
+if (!users) {
+    config.set('users', {
+        1: {name: 'anton', pk: 'xxx'}
+    });
+    config.save(function (err) {
+        if (err) {
+            console.log("Writing configuration failed", err);
+        } else {
+            // intial configuration saved
+        }
+    });
+}
 
 function PairingGeneralDataInputOutputCharacteristic(keys) {
     this.state = this.PAIRING_IDLE;
@@ -266,7 +272,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
                             this.state = this.PAIRING_IDLE;
-                            callback(this.RESULT_UNLIKELY_ERROR);
+                            callback(this.RESULT_SUCCESS);
                         }
                     } else {
                         console.log("command or command identifier wrong");
@@ -292,8 +298,10 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
+                            console.log("CL Authenticator:", clCr);
+                            console.log("SL Authenticator:", cr);
                             this.state = this.PAIRING_IDLE;
-                            callback(this.RESULT_UNLIKELY_ERROR);
+                            callback(this.RESULT_SUCCESS);
                         }
                     } else {
                         console.log("command or command identifier wrong");
