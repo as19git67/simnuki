@@ -14,34 +14,28 @@ var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
 
-var config = new nconf.Provider({
-    env: true,
-    argv: true,
-    store: {
-        type: 'file',
-        file: path.join(__dirname, 'config.json')
-    }
-});
-
-var users = config.get('users');
-if (!users) {
-    config.set('users', {
-        1: {name: 'anton', id: 'xxx'}
-    });
-    users = config.get("users");
-    config.save(function (err) {
-        if (err) {
-            console.log("Writing configuration failed", err);
-        } else {
-            // intial configuration saved
-        }
-    });
-}
-
-function PairingGeneralDataInputOutputCharacteristic(keys) {
+function PairingGeneralDataInputOutputCharacteristic(keys, config) {
     this.state = this.PAIRING_IDLE;
     this.keys = keys;
     this.dataStillToSend = new Buffer(0);
+    this.config = config;
+
+    this.users = config.get('users');
+    if (!this.users) {
+        config.set('users', {});
+        this.users = config.get("users");
+        config.save(function (err) {
+            if (err) {
+                console.log("Writing configuration failed", err);
+            } else {
+                console.log("Intial configuration saved");
+            }
+        });
+    }
+
+    this.slUuid = config.get('uuid');
+    console.log("SL UUID:", this.slUuid);
+
 
     PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
@@ -130,13 +124,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         } else {
                             console.log("ERROR missing SL public key");
                             this.state = this.PAIRING_IDLE;
-                            callback(this.RESULT_UNLIKELY_ERROR);
+                            callback(this.RESULT_SUCCESS);
                         }
                     }
                     else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
-                        callback(this.RESULT_UNLIKELY_ERROR);
+                        callback(this.RESULT_SUCCESS);
                     }
                     break;
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY:
@@ -204,7 +198,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
                             console.log("Nonce length (" + this.keys.sc.length + ") is not " + nukiConstants.NUKI_NONCEBYTES);
                             this.state = this.PAIRING_IDLE;
-                            callback(this.RESULT_UNLIKELY_ERROR);
+                            callback(this.RESULT_SUCCESS);
                             return;
                         }
 
@@ -227,7 +221,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
-                        callback(this.RESULT_UNLIKELY_ERROR);
+                        callback(this.RESULT_SUCCESS);
                     }
 
                     break;
@@ -278,7 +272,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     } else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
-                        callback(this.RESULT_UNLIKELY_ERROR);
+                        callback(this.RESULT_SUCCESS);
                     }
                     break;
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_DATA:
@@ -330,9 +324,46 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 }
                             });
 
-                            // todo send new authorization-id
 
-                            // todo continue with state machine
+                            // 32 authenticator
+                            // 4 auth id
+                            // 16 uuid
+                            // 32 nonce
+
+                            console.log("Creating one time challenge...");
+                            this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                            sodium.api.randombytes_buf(this.keys.sc);
+
+                            r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
+                            // use HMAC-SHA256 to create the authenticator
+                            var cr2 = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
+                            console.log("SL Authorization Data authenticator", cr2);
+
+                            var authIdBuffer = new Buffer(4);
+                            authIdBuffer.writeUInt32LE(newAuthorizationId);
+
+                            var uuid = new Buffer(16);
+                            if (Buffer.isBuffer(this.slUuid)) {
+                                uuid = this.slUuid;
+                            } else {
+                                if (_.isString(this.slUuid)) {
+                                    uuid = new Buffer(this.slUuid, 'hex');
+                                } else {
+                                    if (_.isArray(this.slUuid)) {
+                                        uuid = new Buffer(this.slUuid);
+                                    }
+                                }
+                            }
+
+                            var wData = Buffer.concat([cr2, authIdBuffer, uuid, this.keys.sc]);
+
+                            this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
+                            value = this.getNextChunk(this.dataStillToSend);
+                            if (this._updateValueCallback && value.length > 0) {
+                                console.log("sending authorization id: " + value.length + " bytes");
+                                this._updateValueCallback(value);
+                            }
+
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
@@ -344,19 +375,19 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     } else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
-                        callback(this.RESULT_UNLIKELY_ERROR);
+                        callback(this.RESULT_SUCCESS);
                     }
                     break;
                 default:
                     console.log("ERROR unexpected pairing state");
                     this.state = this.PAIRING_IDLE;
-                    callback(this.RESULT_UNLIKELY_ERROR);
+                    callback(this.RESULT_SUCCESS);
             }
         }
     } else {
         console.log("checksum is NOT ok");
         this.state = this.PAIRING_IDLE;
-        callback(this.RESULT_UNLIKELY_ERROR);
+        callback(this.RESULT_SUCCESS);
     }
 };
 

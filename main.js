@@ -1,5 +1,35 @@
+var fs = require('fs');
+var path = require('path');
+var nconf = require('nconf');
 var bleno = require('bleno');
 var sodium = require('sodium');
+var uuid = require('uuid');
+
+
+var config = new nconf.Provider({
+    env: true,
+    argv: true,
+    store: {
+        type: 'file',
+        file: path.join(__dirname, 'config.json')
+    }
+});
+
+var slUuid = config.get('uuid');
+if (!slUuid) {
+    var arrUUID = new Array(16);
+    uuid.v1(null, arrUUID, arrUUID.length);
+    var uuidBuf = new Buffer(arrUUID);
+    config.set('slUuid', uuidBuf);
+    config.save(function (err) {
+        if (err) {
+            console.log("Writing configuration failed", err);
+        } else {
+            console.log("Intial configuration saved");
+        }
+    });
+}
+
 
 // todo: read from file or generate keys if not in file
 var publicKeySample = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
@@ -18,6 +48,7 @@ var KeyturnerService = require('./keyturner-service');
 var keyturnerInitializationService = new KeyturnerInitializationService();
 var keyturnerPairingService = new KeyturnerPairingService(keys);
 var keyturnerService = new KeyturnerService(keys);
+
 
 bleno.on('stateChange', function (state) {
     console.log('on -> stateChange: ' + state);
@@ -47,7 +78,7 @@ bleno.on('accept', function (address) {
     var slKeys = new sodium.Key.ECDH();
     keys.slPk = slKeys.pk().get();
     keys.slSk = slKeys.sk().get();
-    keyturnerPairingService = new KeyturnerPairingService(keys);
+    keyturnerPairingService = new KeyturnerPairingService(keys, config);
     bleno.setServices([
         keyturnerInitializationService,
         keyturnerPairingService,

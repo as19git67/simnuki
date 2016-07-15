@@ -11,6 +11,7 @@
     "debug": "~2.2.0",
     "nconf": "^0.8.4",
     "sodium": "^1.1.12",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "uuid": "^2.0.2"
   }
 }
