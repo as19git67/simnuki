@@ -63,7 +63,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId, slPk, value;
+    var cmdId, slPk, value, clCr;
     console.log("PairingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -171,7 +171,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                         sodium.api.randombytes_buf(this.keys.sc);
 
-                        // // todo remove hardcoded challenge
                         // this.keys.sc = new Buffer("6CD4163D159050C798553EAA57E278A579AFFCBC56F09FC57FE879E51C42DF17", 'hex');
 
                         if (this.keys.sc.length != nukiConstants.NUKI_NONCEBYTES) {
@@ -207,7 +206,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_AUTHENTICATOR) {
-                        var clCr = data.slice(2, data.length - 2);
+                        clCr = data.slice(2, data.length - 2);
                         console.log("CL authorization authenticator", clCr);
 
                         // create authenticator with data from server side
@@ -220,6 +219,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // Step 14: verify authenticator
                         if (Buffer.compare(clCr, cr) === 0) {
                             console.log("Authenticators verified ok");
+
+                            this.keys.cr = cr;
 
                             // Step 15: send second challenge
                             console.log("Creating second one time challenge...");
@@ -257,15 +258,22 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_DATA) {
                         // Step 16: client sent authorization data
                         var clAuthData = data.slice(2, data.length - 2);
-                        console.log("CL sent authorization data", clAuthData);
+                        console.log("CL sent authorization data", clAuthData, clAuthData.length);
 
-                        // todo verify authenticator
-                        // todo store new user and generate new authorization-id
-                        // todo send new authorization-id
+                        clCr = data.slice(0, 32);
+                        if (Buffer.compare(clCr, this.keys.cr) === 0) {
+                            console.log("Authenticator verified ok");
 
-                        // todo continue with state machine
-                        callback(this.RESULT_SUCCESS);
+                            // todo store new user and generate new authorization-id
+                            // todo send new authorization-id
 
+                            // todo continue with state machine
+                            callback(this.RESULT_SUCCESS);
+                        } else {
+                            console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
+                            this.state = this.PAIRING_IDLE;
+                            callback(this.RESULT_UNLIKELY_ERROR);
+                        }
                     } else {
                         console.log("command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
