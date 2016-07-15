@@ -26,8 +26,9 @@ var config = new nconf.Provider({
 var users = config.get('users');
 if (!users) {
     config.set('users', {
-        1: {name: 'anton', pk: 'xxx'}
+        1: {name: 'anton', id: 'xxx'}
     });
+    users = config.get("users");
     config.save(function (err) {
         if (err) {
             console.log("Writing configuration failed", err);
