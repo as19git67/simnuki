@@ -306,12 +306,12 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                             var id = clAuthData.readUInt32LE(33);
                             console.log("ID: " + id);
-                            var nameBuffer = clAuthData.slice(37, 32);
+                            var nameBuffer = clAuthData.slice(37, 37 + 32);
                             console.log("nameBuffer", nameBuffer);
                             var name = nameBuffer.toString();
                             console.log("Name: " + name);
 
-                            var adNonce = clAuthData.slice(59, 32);
+                            var adNonce = clAuthData.slice(59, 59 + 32);
                             console.log("Nonce:", adNonce);
 
 
