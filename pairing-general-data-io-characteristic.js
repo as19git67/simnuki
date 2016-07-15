@@ -287,7 +287,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         var clAuthData = data.slice(2, data.length - 2);
                         console.log("CL sent authorization data", clAuthData, clAuthData.length);
 
-                        clCr = data.slice(0, 32);
+                        clCr = clAuthData.slice(0, 32);
                         if (Buffer.compare(clCr, this.keys.cr) === 0) {
                             console.log("Authenticator verified ok");
 
@@ -298,8 +298,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
-                            console.log("CL Authenticator:", clCr);
-                            console.log("SL Authenticator:", cr);
+                            console.log("CL Authenticator:", clCr, clCr.length);
+                            console.log("SL Authenticator:", this.keys.cr, this.keys.cr.length);
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_SUCCESS);
                         }
