@@ -18,7 +18,7 @@ var config = new nconf.Provider({
 var slUuid = config.get('uuid');
 if (!slUuid) {
     var arrUUID = new Array(16);
-    uuid.v1(null, arrUUID, arrUUID.length);
+    uuid.v1(null, arrUUID, 16);
     config.set('slUuid', arrUUID);
     config.save(function (err) {
         if (err) {
