@@ -315,8 +315,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 newAuthorizationId = _.keys(this.users).length + 1;
                             }
                             this.users[newAuthorizationId] = {name: name, id: id};
-                            config.set("users", this.users);
-                            config.save(function (err) {
+                            this.config.set("users", this.users);
+                            this.config.save(function (err) {
                                 if (err) {
                                     console.log("Writing configuration with new authorization id failed", err);
                                 } else {
