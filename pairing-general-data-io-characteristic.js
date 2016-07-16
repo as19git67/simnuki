@@ -59,6 +59,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE 
 PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR = 4;
 PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2 = 5;
 PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_DATA = 6;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_AUTHORIZATION_ID = 7;
+PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION = 8;
 
 
 PairingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
@@ -344,6 +346,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                             var wData = Buffer.concat([cr2, authIdBuffer, this.slUuid, this.keys.sc]);
 
+                            this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
+
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
@@ -361,6 +365,21 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         }
                     } else {
                         console.log("command or command identifier wrong");
+                        this.state = this.PAIRING_IDLE;
+                        callback(this.RESULT_SUCCESS);
+                    }
+                    break;
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION:
+                    cmdId = data.readUInt16LE(0);
+                    if (cmdId === nukiConstants.CMD_AUTHORIZATION_ID_CONFIRMATION) {
+                        // todo check confirmation
+                        console.log("CL confirmed authorization id");
+                        console.log("Pairing finished.");
+                        // todo: send STATUS complete
+                        this.state = this.PAIRING_IDLE;
+                        callback(this.RESULT_SUCCESS);
+                    } else {
+                        console.log("ERROR: command wrong");
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     }
@@ -449,6 +468,16 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                     }
                     if (this.dataStillToSend.length === 0) {
                         this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_DATA;
+                    }
+                    break;
+                case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_AUTHORIZATION_ID:
+                    value = this.getNextChunk(this.dataStillToSend);
+                    if (value.length > 0) {
+                        console.log("sending authorization data: " + value.length + " bytes as indication");
+                        this._updateValueCallback(value);
+                    }
+                    if (this.dataStillToSend.length === 0) {
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION;
                     }
                     break;
                 default:
