@@ -83,7 +83,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
     var checksumBuffer = new Buffer(2);
     checksumBuffer.writeUInt16LE(checksum);
     this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
-    console.log("prepared to send:", this.dataStillToSend);
+    console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
@@ -349,7 +349,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
 
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
-                            console.log("authorization id length: " + wData.length);
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
                                 console.log("sending authorization id: " + value.length + " bytes");
