@@ -294,8 +294,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         var id = clAuthData.readUInt32LE(33);
                         var idBuffer = clAuthData.slice(33, 33 + 4);
                         var nameBuffer = clAuthData.slice(37, 37 + 32);
-                        console.log("nameBuffer", nameBuffer);
-                        this.keys.nonceABF = clAuthData.slice(59, 59 + 32);
+                        this.keys.nonceABF = clAuthData.slice(69, 69 + 32);
+                        console.log("nonceABF", this.keys.nonceABF);
 
                         // create authenticator for the authorization data message
                         r = Buffer.concat([idTypeBuffer, idBuffer, nameBuffer, this.keys.nonceABF, this.keys.sc]);
