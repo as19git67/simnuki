@@ -87,7 +87,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var cmdId, slPk, value, clCr;
+    var cmdId, slPk, value, clCr, cr;
     console.log("PairingGeneralDataInputOutputCharacteristic", data);
     var dataForCrc = data.slice(0, data.length - 2);
     var crcSumCalc = crc.crc16ccitt(dataForCrc);
@@ -139,7 +139,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         this.keys.clPk = data.slice(2, data.length - 2);
-                        console.log("CL PUBKEY:", this.keys.clPk);
+                        console.log("Step 6: CL sent PK:", this.keys.clPk);
 
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
@@ -169,15 +169,17 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.keys.slPk = slPk;
                         this.keys.slSk = slSk;
 
-                        console.log("slPK", slPk);
-                        console.log("slSK", slSk);
-                        console.log("clPK", this.keys.clPk);
+                        // console.log("slPK", slPk);
+                        // console.log("slSK", slSk);
+                        // console.log("clPK", this.keys.clPk);
 
                         // Create Diffie-Hellman key from nuki secret key and clients public key
                         // crypto_scalarmult_curve25519(k,secretKey,pk)
+                        console.log("Step 7: creating Diffie-Hellman key...");
                         var k = sodium.api.crypto_scalarmult(slSk, this.keys.clPk);
-                        console.log("SL DH Key from SL SK and CL PK: ", k);
+                        // console.log("SL DH Key from SL SK and CL PK: ", k);
 
+                        console.log("Step 8: deriving long term shared key...");
                         // derive a longterm shared secret key s from k using function kdf1
                         // static const unsigned char _0[16];
                         // static const unsigned char sigma[16] = "expand 32-byte k";
@@ -188,10 +190,10 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         inv.fill(0);
                         var c = new Buffer("expand 32-byte k");
                         hsalsa20.crypto_core(this.keys.sharedSecret, inv, k, c);
-                        console.log("derived shared key: ", this.keys.sharedSecret);
+                        // console.log("derived shared key: ", this.keys.sharedSecret);
 
 
-                        console.log("Creating one time challenge...");
+                        console.log("Step 9: creating one time challenge...");
                         this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                         sodium.api.randombytes_buf(this.keys.sc);
 
@@ -208,16 +210,17 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, this.keys.sc);
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
-                            console.log("sending challenge 1: " + value.length + " bytes");
+                            // console.log("sending challenge 1: " + value.length + " bytes");
                             this._updateValueCallback(value);
+
+                            console.log("Step 12: creating authorization authenticator...");
+                            var r = Buffer.concat([this.keys.clPk, slPk, this.keys.sc]);
+                            // use HMAC-SHA256 to create the authenticator
+                            var a = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
+                        } else {
+                            console.log("ERROR: no updateValueCallback. Can't continue with pairing.");
+                            this.state = this.PAIRING_IDLE;
                         }
-
-
-                        var r = Buffer.concat([this.keys.clPk, slPk, this.keys.sc]);
-                        // use HMAC-SHA256 to create the authenticator
-                        var a = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
-                        console.log("SL Authorization authenticator", a);
-
                         callback(this.RESULT_SUCCESS);
                     }
                     else {
@@ -230,24 +233,22 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR:
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_AUTHENTICATOR) {
+                        console.log("Step 13: CL sent authorization authenticator.");
                         clCr = data.slice(2, data.length - 2);
-                        console.log("CL authorization authenticator", clCr);
 
-                        // create authenticator with data from server side
+                        console.log("Step 14: verifying authorization authenticator...");
 
-                        r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
+                        r = Buffer.concat([this.keys.clPk, this.keys.slPk, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
-                        var cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
+                        cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
                         console.log("SL Authorization authenticator", cr);
 
                         // Step 14: verify authenticator
                         if (Buffer.compare(clCr, cr) === 0) {
-                            console.log("Authenticators verified ok");
-
-                            this.keys.cr = cr;
+                            console.log("Step 14: authenticators verified ok");
 
                             // Step 15: send second challenge
-                            console.log("Creating second one time challenge...");
+                            console.log("Step 15: creating one time challenge...");
                             this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                             sodium.api.randombytes_buf(this.keys.sc);
                             // this.keys.sc = new Buffer("E0742CFEA39CB46109385BF91286A3C02F40EE86B0B62FC34033094DE41E2C0D", 'hex');
@@ -261,18 +262,19 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, this.keys.sc);
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
-                                console.log("sending challenge 2: " + value.length + " bytes");
+                                // console.log("sending challenge 2: " + value.length + " bytes");
+                                console.log("Step 15: sending one time challenge...");
                                 this._updateValueCallback(value);
                             }
 
                             callback(this.RESULT_SUCCESS);
                         } else {
-                            console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
+                            console.log("Step 14: CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_SUCCESS);
                         }
                     } else {
-                        console.log("command or command identifier wrong");
+                        console.log("ERROR: command or command identifier wrong. Expected CMD_AUTHORIZATION_AUTHENTICATOR");
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     }
@@ -282,13 +284,25 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_DATA) {
                         // Step 16: client sent authorization data
                         var clAuthData = data.slice(2, data.length - 2);
-                        console.log("CL sent authorization data", clAuthData, clAuthData.length);
+                        console.log("Step 16: CL sent authorization data.");
 
                         clCr = clAuthData.slice(0, 32);
-                        if (Buffer.compare(clCr, this.keys.cr) === 0) {
-                            console.log("Authenticator verified ok");
 
-                            var idType = clAuthData.readUInt8(32);
+                        console.log("Step 17: verifying authenticator...");
+                        var idType = clAuthData.readUInt8(32);
+                        var id = clAuthData.readUInt32LE(33);
+                        var nameBuffer = clAuthData.slice(37, 37 + 32);
+                        this.keys.nonceABF = clAuthData.slice(59, 59 + 32);
+
+                        // create authenticator for the authorization data message
+                        r = Buffer.concat([new Buffer([idType]), clAuthData.slice(33, 33 + 4), nameBuffer, this.keys.nonceABF, this.keys.sc]);
+                        // use HMAC-SHA256 to create the authenticator
+                        cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
+
+
+                        if (Buffer.compare(clCr, cr) === 0) {
+                            console.log("Step 17: authenticator verified ok.");
+
                             switch (idType) {
                                 case 0:
                                     console.log("Type is App");
@@ -300,16 +314,9 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                     console.log("Type is Fob");
                                     break;
                             }
-
-                            var id = clAuthData.readUInt32LE(33);
                             console.log("ID: " + id);
-                            var nameBuffer = clAuthData.slice(37, 37 + 32);
-                            console.log("nameBuffer", nameBuffer);
-                            var name = nameBuffer.toString();
+                            var name = nameBuffer.toString().trim();
                             console.log("Name: " + name);
-
-                            var adNonce = clAuthData.slice(59, 59 + 32);
-                            console.log("Nonce:", adNonce);
 
 
                             var newAuthorizationId = 1;
@@ -322,7 +329,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 if (err) {
                                     console.log("Writing configuration with new authorization id failed", err);
                                 } else {
-                                    console.log("New user with authorization id " + newAuthorizationId + " added to configuration");
+                                    console.log("Step 18: new user " + name + " with authorization id " + newAuthorizationId + " added to configuration");
                                 }
                             });
 
@@ -332,25 +339,26 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             // 16 uuid
                             // 32 nonce
 
-                            console.log("Creating one time challenge...");
+                            console.log("Step 19: creating authorization-id command...");
                             this.keys.sc = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                             sodium.api.randombytes_buf(this.keys.sc);
 
-                            r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
+                            var newAuthorizationIdBuffer = new Buffer(4);
+                            newAuthorizationIdBuffer.writeUInt32LE(newAuthorizationId);
+
+                            r = Buffer.concat([newAuthorizationIdBuffer, this.slUuid, this.keys.sc, this.keys.nonceABF]);
                             // use HMAC-SHA256 to create the authenticator
-                            var cr2 = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
+                            cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
 
-                            var authIdBuffer = new Buffer(4);
-                            authIdBuffer.writeUInt32LE(newAuthorizationId);
 
-                            var wData = Buffer.concat([cr2, authIdBuffer, this.slUuid, this.keys.sc]);
 
                             this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
 
+                            var wData = Buffer.concat([cr, newAuthorizationIdBuffer, this.slUuid, this.keys.sc]);
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
-                                console.log("sending authorization id: " + value.length + " bytes");
+                                // console.log("sending authorization id: " + value.length + " bytes");
                                 this._updateValueCallback(value);
                             }
 
@@ -358,7 +366,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
                             console.log("CL Authenticator:", clCr, clCr.length);
-                            console.log("SL Authenticator:", this.keys.cr, this.keys.cr.length);
+                            console.log("SL Authenticator:", cr, cr.length);
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_SUCCESS);
                         }
