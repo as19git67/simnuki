@@ -297,7 +297,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         // create authenticator for the authorization data message
                         r = Buffer.concat([new Buffer([idType]), clAuthData.slice(33, 33 + 4), nameBuffer, this.keys.nonceABF, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
-                        cr = crypto.createHmac('SHA256', sharedSecret).update(r).digest();
+                        cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
 
 
                         if (Buffer.compare(clCr, cr) === 0) {
