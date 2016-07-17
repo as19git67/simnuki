@@ -6,5 +6,9 @@ module.exports.CMD_AUTHORIZATION_AUTHENTICATOR = 0x05;
 module.exports.CMD_AUTHORIZATION_DATA = 0x06;
 module.exports.CMD_AUTHORIZATION_ID = 0x07;
 module.exports.CMD_AUTHORIZATION_ID_CONFIRMATION = 0x1E;
+module.exports.CMD_STATUS = 0x0E;
+
+module.exports.STATUS_COMPLETE = 0x00;
+module.exports.STATUS_ACCEPTED = 0x01;
 
 module.exports.NUKI_NONCEBYTES = 32;

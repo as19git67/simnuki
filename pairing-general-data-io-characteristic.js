@@ -349,6 +349,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
 
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
+                            console.log("authorization id length: " + wData.length);
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
                                 console.log("sending authorization id: " + value.length + " bytes");
