@@ -290,12 +290,15 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                         console.log("Step 17: verifying authenticator...");
                         var idType = clAuthData.readUInt8(32);
+                        var idTypeBuffer = new Buffer([idType]);
                         var id = clAuthData.readUInt32LE(33);
+                        var idBuffer = clAuthData.slice(33, 33 + 4);
                         var nameBuffer = clAuthData.slice(37, 37 + 32);
                         this.keys.nonceABF = clAuthData.slice(59, 59 + 32);
 
                         // create authenticator for the authorization data message
-                        r = Buffer.concat([new Buffer([idType]), clAuthData.slice(33, 33 + 4), nameBuffer, this.keys.nonceABF, this.keys.sc]);
+                        r = Buffer.concat([idTypeBuffer, idBuffer, nameBuffer, this.keys.nonceABF, this.keys.sc]);
+                        console.log("R", r, r.length);
                         // use HMAC-SHA256 to create the authenticator
                         cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
 
