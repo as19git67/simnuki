@@ -339,7 +339,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             r = Buffer.concat([this.keys.slPk, this.keys.clPk, this.keys.sc]);
                             // use HMAC-SHA256 to create the authenticator
                             var cr2 = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
-                            console.log("SL Authorization Data authenticator", cr2);
 
                             var authIdBuffer = new Buffer(4);
                             authIdBuffer.writeUInt32LE(newAuthorizationId);
@@ -471,10 +470,12 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                     }
                     break;
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_AUTHORIZATION_ID:
-                    value = this.getNextChunk(this.dataStillToSend);
-                    if (value.length > 0) {
-                        console.log("sending authorization data: " + value.length + " bytes as indication");
-                        this._updateValueCallback(value);
+                    while (this.dataStillToSend.length > 0) {
+                        value = this.getNextChunk(this.dataStillToSend);
+                        if (value.length > 0) {
+                            console.log("sending authorization id: " + value.length + " bytes as indication");
+                            this._updateValueCallback(value);
+                        }
                     }
                     if (this.dataStillToSend.length === 0) {
                         this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION;
