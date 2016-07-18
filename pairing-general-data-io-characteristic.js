@@ -63,6 +63,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_AUTHORIZAT
 PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION = 8;
 
 
+PairingGeneralDataInputOutputCharacteristic.prototype.crcOk = function (dataTocheck) {
+    var dataForCrc = dataTocheck.slice(0, dataTocheck.length - 2);
+    var crcSumCalc = crc.crc16ccitt(dataForCrc);
+    var crcSumRetrieved = dataTocheck.readUInt16LE(dataTocheck.length - 2);
+    return crcSumCalc === crcSumRetrieved;
+};
+
 PairingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
     var block0;
     if (data.length > 20) {
@@ -83,18 +90,15 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
     var checksumBuffer = new Buffer(2);
     checksumBuffer.writeUInt16LE(checksum);
     this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
-    console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
+    // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var cmdId, slPk, value, clCr, cr;
-    console.log("PairingGeneralDataInputOutputCharacteristic", data);
-    var dataForCrc = data.slice(0, data.length - 2);
-    var crcSumCalc = crc.crc16ccitt(dataForCrc);
-    var crcSumRetrieved = data.readUInt16LE(data.length - 2);
+    // console.log("PairingGeneralDataInputOutputCharacteristic", data);
 
-    if (crcSumCalc === crcSumRetrieved) {
-        console.log("checksum is ok");
+    if (this.crcOk(data)) {
+        // console.log("checksum is ok");
         if (offset) {
             callback(this.RESULT_ATTR_NOT_LONG);
         } else if (data.length > 200) {
@@ -105,6 +109,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
+
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;
@@ -124,13 +129,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
 
                             callback(this.RESULT_SUCCESS);
                         } else {
-                            console.log("ERROR missing SL public key");
+                            console.log("ERROR: SL does not have a public key");
                             this.state = this.PAIRING_IDLE;
                             callback(this.RESULT_SUCCESS);
                         }
                     }
                     else {
-                        console.log("command or command identifier wrong");
+                        console.log("ERROR: command or command identifier wrong");
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     }
@@ -139,7 +144,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         this.keys.clPk = data.slice(2, data.length - 2);
-                        console.log("Step 6: CL sent PK:", this.keys.clPk);
+                        console.log("Step 6: CL sent PK:");
 
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
@@ -241,7 +246,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         r = Buffer.concat([this.keys.clPk, this.keys.slPk, this.keys.sc]);
                         // use HMAC-SHA256 to create the authenticator
                         cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
-                        console.log("SL Authorization authenticator", cr);
 
                         // Step 14: verify authenticator
                         if (Buffer.compare(clCr, cr) === 0) {
@@ -295,11 +299,9 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         var idBuffer = clAuthData.slice(33, 33 + 4);
                         var nameBuffer = clAuthData.slice(37, 37 + 32);
                         this.keys.nonceABF = clAuthData.slice(69, 69 + 32);
-                        console.log("nonceABF", this.keys.nonceABF);
 
                         // create authenticator for the authorization data message
                         r = Buffer.concat([idTypeBuffer, idBuffer, nameBuffer, this.keys.nonceABF, this.keys.sc]);
-                        console.log("R", r, r.length);
                         // use HMAC-SHA256 to create the authenticator
                         cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
 
@@ -331,7 +333,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this.config.set("users", this.users);
                             this.config.save(function (err) {
                                 if (err) {
-                                    console.log("Writing configuration with new authorization id failed", err);
+                                    console.log("ERROR: writing configuration with new authorization id failed", err);
                                 } else {
                                     console.log("Step 18: new user " + name + " with authorization id " + newAuthorizationId + " added to configuration");
                                 }
@@ -353,7 +355,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             r = Buffer.concat([newAuthorizationIdBuffer, this.slUuid, this.keys.sc, this.keys.nonceABF]);
                             // use HMAC-SHA256 to create the authenticator
                             cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
-
 
 
                             this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
