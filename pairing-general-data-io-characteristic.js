@@ -376,7 +376,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             callback(this.RESULT_SUCCESS);
                         }
                     } else {
-                        console.log("command or command identifier wrong");
+                        console.log("ERROR: command or command identifier wrong. CMD_AUTHORIZATION_DATA was expected";
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     }
@@ -385,9 +385,16 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     cmdId = data.readUInt16LE(0);
                     if (cmdId === nukiConstants.CMD_AUTHORIZATION_ID_CONFIRMATION) {
                         // todo check confirmation
-                        console.log("CL confirmed authorization id");
-                        console.log("Pairing finished.");
-                        // todo: send STATUS complete
+                        console.log("Step 21: CL authorization-id confirmation");
+
+                        console.log("Step 22: Sending status complete.");
+                        this.prepareDataToSend(nukiConstants.CMD_STATUS, new Buffer([nukiConstants.STATUS_COMPLETE]));
+                        value = this.getNextChunk(this.dataStillToSend);
+                        if (this._updateValueCallback && value.length > 0) {
+                            // console.log("sending authorization id: " + value.length + " bytes");
+                            this._updateValueCallback(value);
+                        }
+
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     } else {
@@ -421,7 +428,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (ma
 
                 var value = this.getNextChunk(this.dataStillToSend);
                 if (value.length > 0) {
-                    console.log("sending " + value.length + " bytes from onSubscribe");
+                    // console.log("sending " + value.length + " bytes from onSubscribe");
                     updateValueCallback(value);
                 }
 
@@ -454,7 +461,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
                     value = this.getNextChunk(this.dataStillToSend);
                     if (value.length > 0) {
-                        console.log("sending PK: " + value.length + " bytes as indication");
+                        // console.log("sending PK: " + value.length + " bytes as indication");
                         this._updateValueCallback(value);
                     }
                     if (this.dataStillToSend.length === 0) {
@@ -465,7 +472,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE:
                     value = this.getNextChunk(this.dataStillToSend);
                     if (value.length > 0) {
-                        console.log("sending challenge 1: " + value.length + " bytes as indication");
+                        // console.log("sending challenge 1: " + value.length + " bytes as indication");
                         this._updateValueCallback(value);
                     }
                     if (this.dataStillToSend.length === 0) {
@@ -475,7 +482,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2:
                     value = this.getNextChunk(this.dataStillToSend);
                     if (value.length > 0) {
-                        console.log("sending challenge 2: " + value.length + " bytes as indication");
+                        // console.log("sending challenge 2: " + value.length + " bytes as indication");
                         this._updateValueCallback(value);
                     }
                     if (this.dataStillToSend.length === 0) {
@@ -486,7 +493,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                     while (this.dataStillToSend.length > 0) {
                         value = this.getNextChunk(this.dataStillToSend);
                         if (value.length > 0) {
-                            console.log("sending authorization id: " + value.length + " bytes as indication");
+                            // console.log("sending authorization id: " + value.length + " bytes as indication");
                             this._updateValueCallback(value);
                         }
                     }
@@ -495,11 +502,11 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
                     }
                     break;
                 default:
-                    console.log("ERROR unexpected pairing state");
+                    console.log("ERROR: unexpected pairing state");
                     this.state = this.PAIRING_IDLE;
             }
         } else {
-            console.log("don't have updateValueCallback on indicate");
+            console.log("ERROR: don't have updateValueCallback on indicate");
             this.state = this.PAIRING_IDLE;
         }
     } else {
