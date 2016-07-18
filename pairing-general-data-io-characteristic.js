@@ -33,9 +33,13 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
         });
     }
 
-    this.slUuid = new Buffer(config.get('slUuid'), 'hex');
-    console.log("SL UUID:", this.slUuid);
-
+    var strUuid = config.get('uuid');
+    if (strUuid) {
+        this.slUuid = new Buffer(strUuid, 'hex');
+        console.log("SL UUID:", this.slUuid);
+    } else {
+        this.slUuid = new Buffer(0);
+    }
 
     PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
         // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
