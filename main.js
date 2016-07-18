@@ -25,7 +25,7 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
         if (err) {
             console.log("Writing configuration failed", err);
         } else {
-            console.log("Intial configuration saved");
+            console.log("Initial configuration saved");
         }
     });
 }

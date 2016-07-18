@@ -34,24 +34,24 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
     }
 
     var strUuid = config.get('uuid');
-    if (strUuid && _.isString(strUuid) && strUuid.length === 32) {
+    if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
         this.slUuid = new Buffer(strUuid, 'hex');
         console.log("SL UUID:", this.slUuid);
-    } else {
-        this.slUuid = new Buffer(0);
-    }
 
-    PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
-        // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
-        uuid: 'a92ee101550111e4916c0800200c9a66',
-        properties: ['write', 'indicate'],
-        descriptors: [
-            new BlenoDescriptor({
-                uuid: '2902',   // client characterstic configuration
-                value: 'Pairing commands'
-            })
-        ]
-    });
+        PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
+            // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
+            uuid: 'a92ee101550111e4916c0800200c9a66',
+            properties: ['write', 'indicate'],
+            descriptors: [
+                new BlenoDescriptor({
+                    uuid: '2902',   // client characterstic configuration
+                    value: 'Pairing commands'
+                })
+            ]
+        });
+    } else {
+        console.log("ERROR: no SL UUID in config");
+    }
 }
 
 util.inherits(PairingGeneralDataInputOutputCharacteristic, BlenoCharacteristic);
