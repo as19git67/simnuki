@@ -297,9 +297,9 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         clCr = clAuthData.slice(0, 32);
 
                         console.log("Step 17: verifying authenticator...");
-                        var idType = clAuthData.readUInt8(32);
-                        var idTypeBuffer = new Buffer([idType]);
-                        var id = clAuthData.readUInt32LE(33);
+                        var appType = clAuthData.readUInt8(32);
+                        var idTypeBuffer = new Buffer([appType]);
+                        var appId = clAuthData.readUInt32LE(33);
                         var idBuffer = clAuthData.slice(33, 33 + 4);
                         var nameBuffer = clAuthData.slice(37, 37 + 32);
                         this.keys.nonceABF = clAuthData.slice(69, 69 + 32);
@@ -313,7 +313,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         if (Buffer.compare(clCr, cr) === 0) {
                             console.log("Step 17: authenticator verified ok.");
 
-                            switch (idType) {
+                            switch (appType) {
                                 case 0:
                                     console.log("Type is App");
                                     break;
@@ -324,7 +324,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                     console.log("Type is Fob");
                                     break;
                             }
-                            console.log("ID: " + id);
+                            console.log("App ID: " + appId);
                             var name = nameBuffer.toString().trim();
                             console.log("Name: " + name);
 
@@ -333,7 +333,12 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             if (this.users && _.keys(this.users).length > 0) {
                                 newAuthorizationId = _.keys(this.users).length + 1;
                             }
-                            this.users[newAuthorizationId] = {name: name, id: id};
+                            this.users[newAuthorizationId] = {
+                                name: name,
+                                appId: appId,
+                                appType: appType,
+                                sharedSecret: this.keys.sharedSecret
+                            };
                             this.config.set("users", this.users);
                             this.config.save(function (err) {
                                 if (err) {
