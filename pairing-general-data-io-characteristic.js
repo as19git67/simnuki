@@ -453,7 +453,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onUnsubscribe = function (
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onIndicate = function () {
-    console.log("PairingGeneralDataInputOutputCharacteristic indicate");
+    // console.log("PairingGeneralDataInputOutputCharacteristic indicate");
     if (this.dataStillToSend.length > 0) {
         if (this._updateValueCallback) {
             var value;
