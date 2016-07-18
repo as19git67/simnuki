@@ -33,7 +33,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
         });
     }
 
-    this.slUuid = new Buffer(config.get('slUuid'));
+    this.slUuid = new Buffer(config.get('slUuid'), 'hex');
     console.log("SL UUID:", this.slUuid);
 
 
@@ -334,6 +334,9 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             this.config.save(function (err) {
                                 if (err) {
                                     console.log("ERROR: writing configuration with new authorization id failed", err);
+                                    this.state = this.PAIRING_IDLE;
+                                    callback(this.RESULT_SUCCESS);
+                                    return;
                                 } else {
                                     console.log("Step 18: new user " + name + " with authorization id " + newAuthorizationId + " added to configuration");
                                 }

@@ -19,7 +19,7 @@ var slUuid = config.get('uuid');
 if (!slUuid) {
     var arrUUID = new Array(16);
     uuid.v1(null, arrUUID);
-    config.set('slUuid', arrUUID);
+    config.set('slUuid', arrUUID.toString('hex'));
     config.save(function (err) {
         if (err) {
             console.log("Writing configuration failed", err);
