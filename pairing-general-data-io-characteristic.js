@@ -328,12 +328,20 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             var name = nameBuffer.toString().trim();
                             console.log("Name: " + name);
 
-
                             var newAuthorizationId = 1;
-                            if (this.users && _.keys(this.users).length > 0) {
-                                newAuthorizationId = _.keys(this.users).length + 1;
+                            var user = _.findWhere(this.users, {name: name});
+                            if (user) {
+                                newAuthorizationId = user.authorizationId;
+                            } else {
+                                _.each(this.users, function (user) {
+                                    if (user.authorizationId >= newAuthorizationId) {
+                                        newAuthorizationId = user.authorizationId + 1;
+                                    }
+                                })
                             }
+
                             this.users[newAuthorizationId] = {
+                                authorizationId: newAuthorizationId,
                                 name: name,
                                 appId: appId,
                                 appType: appType,
