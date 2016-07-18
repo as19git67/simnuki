@@ -337,7 +337,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 name: name,
                                 appId: appId,
                                 appType: appType,
-                                sharedSecret: this.keys.sharedSecret
+                                sharedSecret: this.keys.sharedSecret.toString('hex')
                             };
                             this.config.set("users", this.users);
                             this.config.save(function (err) {
