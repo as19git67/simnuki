@@ -15,8 +15,8 @@ var config = new nconf.Provider({
     }
 });
 
-var slUuid = config.get('uuid');
-if (!slUuid) {
+var strUuid = config.get('uuid');
+if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     var arrUUID = new Array(16);
     uuid.v1(null, arrUUID);
     config.set('uuid', arrUUID.toString('hex'));

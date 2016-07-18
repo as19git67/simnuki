@@ -34,7 +34,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
     }
 
     var strUuid = config.get('uuid');
-    if (strUuid) {
+    if (strUuid && _.isString(strUuid) && strUuid.length === 32) {
         this.slUuid = new Buffer(strUuid, 'hex');
         console.log("SL UUID:", this.slUuid);
     } else {
