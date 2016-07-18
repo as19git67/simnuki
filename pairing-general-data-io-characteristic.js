@@ -28,7 +28,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
             if (err) {
                 console.log("Writing configuration failed", err);
             } else {
-                console.log("Intial configuration saved");
+                console.log("Initial user configuration saved");
             }
         });
     }
