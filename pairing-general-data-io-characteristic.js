@@ -34,7 +34,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
     }
 
     var strUuid = config.get('uuid');
-    if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
+    if (strUuid && _.isString(strUuid) && strUuid.length === 32) {
         this.slUuid = new Buffer(strUuid, 'hex');
         console.log("SL UUID:", this.slUuid);
 
@@ -50,7 +50,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
             ]
         });
     } else {
-        console.log("ERROR: no SL UUID in config");
+        console.log("ERROR: no SL UUID in config", strUuid);
     }
 }
 

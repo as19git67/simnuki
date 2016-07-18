@@ -28,6 +28,8 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
             console.log("Initial configuration saved");
         }
     });
+} else {
+    console.log("SL UUID: " + strUuid);
 }
 
 
