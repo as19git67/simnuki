@@ -376,7 +376,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             callback(this.RESULT_SUCCESS);
                         }
                     } else {
-                        console.log("ERROR: command or command identifier wrong. CMD_AUTHORIZATION_DATA was expected";
+                        console.log("ERROR: command or command identifier wrong. CMD_AUTHORIZATION_DATA was expected");
                         this.state = this.PAIRING_IDLE;
                         callback(this.RESULT_SUCCESS);
                     }
