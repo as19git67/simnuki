@@ -58,17 +58,19 @@ bleno.on('stateChange', function (state) {
     if (state === 'poweredOn') {
         // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
 
-        var testBuf = new Buffer("0201061521669a0c2000086c91e411015500e12ea92000001b0e094e756b695f3230303030303142", 'hex');
         var preBuf = new Buffer("020106", 'hex');
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
         var serviceDataBuf = new Buffer('2000001B', 'hex');
         var advDataBuf = Buffer.concat([uuidBuf, serviceDataBuf]);
         var len = advDataBuf.length;
         console.log("Length of adv data: " + len);
-        var lenBuf = new Buffer(1);
+        var lenBuf = new Buffer(2);
         lenBuf.writeUInt8(len);
+        lenBuf.writeUInt8(0x21, 1);
 
-        bleno.startAdvertisingWithEIRData(Buffer.concat([preBuf, lenBuf, advDataBuf]), function (err) {
+        var advBuf = Buffer.concat([preBuf, lenBuf, advDataBuf]);
+        console.log("Advertising with ", advBuf);
+        bleno.startAdvertisingWithEIRData(advBuf, function (err) {
             console.log("Advertising started", err);
         });
     } else {
