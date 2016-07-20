@@ -59,14 +59,15 @@ bleno.on('stateChange', function (state) {
         // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
 
         var preBuf = new Buffer("020106", 'hex');
+        var typeBuf = new Buffer([0x21]);
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
         var serviceDataBuf = new Buffer('2000001B', 'hex');
-        var advDataBuf = Buffer.concat([uuidBuf, serviceDataBuf]);
+        var advDataBuf = Buffer.concat([typeBuf, uuidBuf, serviceDataBuf]);
         var len = advDataBuf.length;
         console.log("Length of adv data: " + len);
-        var lenBuf = new Buffer(2);
+        var lenBuf = new Buffer(1);
         lenBuf.writeUInt8(len);
-        lenBuf.writeUInt8(0x21, 1);
+
 
         var advBuf = Buffer.concat([preBuf, lenBuf, advDataBuf]);
         console.log("Advertising with ", advBuf);
