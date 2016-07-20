@@ -62,7 +62,7 @@ bleno.on('stateChange', function (state) {
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
         var serviceDataBuf = new Buffer('2000001B', 'hex');
         console.log("Advertise with EIR Data:", uuidBuf, serviceDataBuf);
-        bleno.startAdvertisingWithEIRData(testBuf, serviceDataBuf, function (err) {
+        bleno.startAdvertisingWithEIRData(Buffer.concat([uuidBuf, serviceDataBuf]), serviceDataBuf, function (err) {
             console.log("Advertising started", err);
         });
     } else {
