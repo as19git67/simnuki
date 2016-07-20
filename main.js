@@ -58,6 +58,8 @@ bleno.on('stateChange', function (state) {
     if (state === 'poweredOn') {
         // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
 
+        var nukiIdStr = '2000001B';
+
         var preBuf = new Buffer("020106", 'hex');
         var typeBuf = new Buffer([0x21]);
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
@@ -65,7 +67,7 @@ bleno.on('stateChange', function (state) {
         for (var i = 0; i < uuidReverseBuf.length; i++) {
             uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
         }
-        var serviceDataBuf = new Buffer('2000001B', 'hex');
+        var serviceDataBuf = new Buffer(nukiIdStr, 'hex');
         var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
         var len = advDataBuf.length;
         console.log("Length of adv data: " + len);
@@ -74,8 +76,16 @@ bleno.on('stateChange', function (state) {
 
 
         var advBuf = Buffer.concat([preBuf, lenBuf, advDataBuf]);
+
+        var completeLocalName = 'Nuki_' + nukiIdStr;
+        var completeLocalNameBuf = new Buffer(completeLocalName, 'ascii');
+        var localNamePrefixBuf = new Buffer(2);
+        localNamePrefixBuf.writeUInt8(completeLocalNameBuf.length + 1);
+        localNamePrefixBuf.writeUInt8(0x09, 1);
+        var scanDataBuf = Buffer.concat([localNamePrefixBuf, completeLocalNameBuf]);
         console.log("Advertising with ", advBuf);
-        bleno.startAdvertisingWithEIRData(advBuf, function (err) {
+        console.log("Scan data ", scanDataBuf)
+        bleno.startAdvertisingWithEIRData(advBuf, scanDataBuf, function (err) {
             console.log("Advertising started", err);
         });
     } else {
