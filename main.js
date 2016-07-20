@@ -61,8 +61,12 @@ bleno.on('stateChange', function (state) {
         var preBuf = new Buffer("020106", 'hex');
         var typeBuf = new Buffer([0x21]);
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
+        var uuidReverseBuf = new Buffer(uuidBuf.length);
+        for (var i = 0; i < uuidReverseBuf.length; i++) {
+            uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
+        }
         var serviceDataBuf = new Buffer('2000001B', 'hex');
-        var advDataBuf = Buffer.concat([typeBuf, uuidBuf, serviceDataBuf]);
+        var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
         var len = advDataBuf.length;
         console.log("Length of adv data: " + len);
         var lenBuf = new Buffer(1);
