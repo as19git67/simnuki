@@ -56,7 +56,8 @@ bleno.on('stateChange', function (state) {
     console.log('on -> stateChange: ' + state);
 
     if (state === 'poweredOn') {
-        bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
+        // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
+        bleno.startAdvertisingWithEIRData(new Buffer(keyturnerPairingService.uuid, 'hex'), new Buffer('2000001B', 'hex'));
     } else {
         bleno.stopAdvertising();
     }
