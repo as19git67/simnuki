@@ -41,11 +41,11 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
         PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
             // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
             uuid: 'a92ee101550111e4916c0800200c9a66',
-            properties: ['read', 'write', 'indicate'],
+            properties: ['write', 'indicate'],
             descriptors: [
                 new BlenoDescriptor({
-                    uuid: '0021',   // client characterstic configuration
-                    value: '2000001B'
+                    uuid: '2902',   // client characterstic configuration
+                    value: 'Pairing commands'
                 })
             ]
         });
