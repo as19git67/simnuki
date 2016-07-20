@@ -41,7 +41,7 @@ function PairingGeneralDataInputOutputCharacteristic(keys, config) {
         PairingGeneralDataInputOutputCharacteristic.super_.call(this, {
             // uuid: 'a92ee101-5501-11e4-916c-0800200c9a66',
             uuid: 'a92ee101550111e4916c0800200c9a66',
-            properties: ['write', 'indicate'],
+            properties: ['read', 'write', 'indicate'],
             descriptors: [
                 new BlenoDescriptor({
                     uuid: '2902',   // client characterstic configuration
@@ -95,6 +95,10 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
     checksumBuffer.writeUInt16LE(checksum);
     this.dataStillToSend = Buffer.concat([responseData, checksumBuffer]);
     // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
+};
+
+PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (x, y) {
+    console.log("READ REQUEST", x, y);
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
