@@ -218,21 +218,26 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             return;
                         }
 
-                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE;
+                        this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHENTICATOR;
                         this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, this.keys.sc);
+while(this.dataStillToSend.length > 0) {
                         value = this.getNextChunk(this.dataStillToSend);
                         if (this._updateValueCallback && value.length > 0) {
                             // console.log("sending challenge 1: " + value.length + " bytes");
                             this._updateValueCallback(value);
 
+                        } else {
+this.dataStillToSend = new Buffer(0);
+                            console.log("ERROR: no updateValueCallback. Can't continue with pairing.");
+                            this.state = this.PAIRING_IDLE;
+                        callback(this.RESULT_SUCCESS);
+return;
+                        }
+}
                             console.log("Step 12: creating authorization authenticator...");
                             var r = Buffer.concat([this.keys.clPk, slPk, this.keys.sc]);
                             // use HMAC-SHA256 to create the authenticator
                             var a = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
-                        } else {
-                            console.log("ERROR: no updateValueCallback. Can't continue with pairing.");
-                            this.state = this.PAIRING_IDLE;
-                        }
                         callback(this.RESULT_SUCCESS);
                     }
                     else {
@@ -269,15 +274,16 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             //     callback(this.RESULT_UNLIKELY_ERROR);
                             //     return;
                             // }
-                            this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_CHALLENGE_2;
+                            this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_DATA;
                             this.prepareDataToSend(nukiConstants.CMD_CHALLENGE, this.keys.sc);
+while(this.dataStillToSend.length > 0) {
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
                                 // console.log("sending challenge 2: " + value.length + " bytes");
                                 console.log("Step 15: sending one time challenge...");
                                 this._updateValueCallback(value);
                             }
-
+}
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("Step 14: CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
@@ -380,16 +386,17 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             cr = crypto.createHmac('SHA256', this.keys.sharedSecret).update(r).digest();
 
 
-                            this.state = this.PAIRING_SL_SEND_AUTHORIZATION_ID;
+                            this.state = this.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION;
 
                             var wData = Buffer.concat([cr, newAuthorizationIdBuffer, this.slUuid, this.keys.sc]);
                             this.prepareDataToSend(nukiConstants.CMD_AUTHORIZATION_ID, wData);
+while(this.dataStillToSend.length > 0) {
                             value = this.getNextChunk(this.dataStillToSend);
                             if (this._updateValueCallback && value.length > 0) {
                                 // console.log("sending authorization id: " + value.length + " bytes");
                                 this._updateValueCallback(value);
                             }
-
+}
                             callback(this.RESULT_SUCCESS);
                         } else {
                             console.log("CL and SL authenticators are not equal. Possible man in the middle attack. Exiting.");
@@ -448,13 +455,13 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onSubscribe = function (ma
     if (this.dataStillToSend.length > 0) {
         switch (this.state) {
             case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_PUBKEY:
-
+                while(this.dataStillToSend.length > 0) {
                 var value = this.getNextChunk(this.dataStillToSend);
                 if (value.length > 0) {
-                    // console.log("sending " + value.length + " bytes from onSubscribe");
+                     console.log("sending " + value.length + " bytes from onSubscribe");
                     updateValueCallback(value);
                 }
-
+}
                 if (this.dataStillToSend.length === 0) {
                     this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
                 }
