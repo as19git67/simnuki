@@ -6,6 +6,9 @@ var bleno = require('bleno');
 var sodium = require('sodium');
 var uuid = require('uuid');
 
+var nukiIdStr = '2000001B';
+
+process.env['BLENO_DEVICE_NAME'] = 'Nuki_' + nukiIdStr;
 
 var config = new nconf.Provider({
     env: true,
@@ -58,11 +61,17 @@ bleno.on('stateChange', function (state) {
     if (state === 'poweredOn') {
         // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
 
-        var nukiIdStr = '2000001B';
 
-        var preBuf = new Buffer("020106", 'hex');
-        var typeBuf = new Buffer([0x21]);
+        // EIR data consists of multiple messages in the format:
+        //  len (including command byte)
+        //  data type (see https://www.bluetooth.com/specifications/assigned-numbers/Generic-Access-Profile)
+        //  message data
+
+        var preBuf = new Buffer("020106", 'hex'); // data type 0x01 means flags (LE General Discoverable Mode, BR/EDR Not Supported (i.e. bit 37 of LMP Extended Feature bits Page 0)
+
+        var typeBuf = new Buffer([0x21]);   // data type 0x21 means "Service Data - 128-bit UUID"
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
+        console.log("Length of uuid: " + uuidBuf.length);
         var uuidReverseBuf = new Buffer(uuidBuf.length);
         for (var i = 0; i < uuidReverseBuf.length; i++) {
             uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
@@ -81,12 +90,14 @@ bleno.on('stateChange', function (state) {
         var completeLocalNameBuf = new Buffer(completeLocalName, 'ascii');
         var localNamePrefixBuf = new Buffer(2);
         localNamePrefixBuf.writeUInt8(completeLocalNameBuf.length + 1);
-        localNamePrefixBuf.writeUInt8(0x09, 1);
+        localNamePrefixBuf.writeUInt8(0x09, 1); // data type 0x09 means "Complete Local Name"
         var scanDataBuf = Buffer.concat([localNamePrefixBuf, completeLocalNameBuf]);
         console.log("Advertising with ", advBuf);
-        console.log("Scan data ", scanDataBuf)
+        console.log("Scan data ", scanDataBuf);
         bleno.startAdvertisingWithEIRData(advBuf, scanDataBuf, function (err) {
-            console.log("Advertising started", err);
+            if (err) {
+                console.log("ERROR: startAdvertisingWithEIRData failed:", err);
+            }
         });
     } else {
         bleno.stopAdvertising();
