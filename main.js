@@ -61,6 +61,13 @@ bleno.on('stateChange', function (state) {
     if (state === 'poweredOn') {
         // bleno.startAdvertising('SimNuki', [keyturnerPairingService.uuid]);
 
+        bleno.updateRssi(function (err, rssi) {
+            if (err) {
+                console.log("ERROR: RSSI update failed", err);
+            } else {
+                console.log("RSSI updated", rssi);
+            }
+        });
 
         // EIR data consists of multiple messages in the format:
         //  len (including command byte)
@@ -108,11 +115,11 @@ bleno.on('advertisingStart', function (error) {
     console.log('on -> advertisingStart: ' + (error ? 'error ' + error : 'success'));
 
     if (!error) {
-        bleno.setServices([
-            keyturnerInitializationService,
-            keyturnerPairingService,
-            keyturnerService
-        ]);
+        //       bleno.setServices([
+//            keyturnerInitializationService,
+        //           keyturnerPairingService,
+//            keyturnerService
+        //       ]);
     }
 });
 
@@ -136,6 +143,18 @@ bleno.on('disconnect', function () {
 
 bleno.on('mtuChange', function (mtu) {
     console.log('on -> mtuChange: ' + mtu);
+});
+
+bleno.on('platform', function (pf) {
+    console.log('on -> platform: ' + pf);
+});
+
+bleno.on('addressChange', function (ad) {
+    console.log('on -> addressChange: ', ad);
+});
+
+bleno.on('rssiUpdate', function (rssi) {
+    console.log('on -> rssiUpdate: ' + rssi);
 });
 
 bleno.on('servicesSet', function (error) {

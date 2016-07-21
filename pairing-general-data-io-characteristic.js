@@ -97,7 +97,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (offset, callback) {
-    callback(this.RESULT_SUCCESS, 0);
+    callback(this.RESULT_SUCCESS, new Buffer('Hallo', 'ascii'));
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
