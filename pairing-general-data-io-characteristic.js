@@ -96,8 +96,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.prepareDataToSend = functi
     // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 };
 
-PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (x, y) {
-    console.log("READ REQUEST", x, y);
+PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (offset, callback) {
+    callback(this.RESULT_SUCCESS, 0);
 };
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
