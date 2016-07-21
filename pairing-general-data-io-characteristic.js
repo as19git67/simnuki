@@ -102,7 +102,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var cmdId, slPk, value, clCr, cr;
-    // console.log("PairingGeneralDataInputOutputCharacteristic", data);
+    console.log("PairingGeneralDataInputOutputCharacteristic data: ", data);
+    console.log("PairingGeneralDataInputOutputCharacteristic state: ", this.state);
 
     if (this.crcOk(data)) {
         // console.log("checksum is ok");
@@ -115,8 +116,10 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE:
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
+                    console.log("rCmd:", rCmd);
+                    console.log("cmdId:", cmdId);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-
+                        console.log("ok");
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;
