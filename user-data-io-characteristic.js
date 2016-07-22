@@ -56,7 +56,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var nonce, d, currentTimeBuffer, timezoneOffset;
+    var nonce, d, currentTimeBuffer, timezoneOffset, value;
     console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
@@ -225,11 +225,25 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             while (this.dataStillToSend.length > 0) {
                                 value = this.getNextChunk(this.dataStillToSend);
                                 if (this._updateValueCallback && value.length > 0) {
-                                    // console.log("SL sending config data...", value, value.length);
                                     this._updateValueCallback(value);
                                 }
                             }
                             break;
+                        case nukiConstants.CMD_UPDATE_TIME:
+                            console.log("CL sent CMD_UPDATE_TIME");
+
+
+                            if (this._updateValueCallback && value.length > 0) {
+                                var stBuf = Buffer.concat([
+                                    new Buffer(2).writeUInt16LE(nukiConstants.CMD_STATUS),
+                                    new Buffer([nukiConstants.STATUS_COMPLETE])]);
+                                var checksum = crc.crc16ccitt(stBuf);
+                                var checksumBuffer = new Buffer(2);
+                                checksumBuffer.writeUInt16LE(checksum);
+                                value = Buffer.concat([stBuf, checksumBuffer]);
+                                console.log("STATUS COMPLETE", value);
+                                this._updateValueCallback(value);
+                            }
                     }
                     callback(this.RESULT_SUCCESS);
                 } else {
