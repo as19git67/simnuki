@@ -106,7 +106,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                 case PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_IDLE:
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
-                    if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
+                    if (rCmd === nukiConstants.CMD_REQUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;

@@ -26,6 +26,28 @@ function UserSpecificDataInputOutputCharacteristic(keys, config) {
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);
 
+UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend = function (cmd, authorizationId, nonce, sharedSecret, payload) {
+
+    var authIdBuffer = new Buffer(4);
+    authIdBuffer.writeUInt32LE(authorizationId);
+    var cmdBuffer = new Buffer(2);
+    cmdBuffer.writeUInt16LE(cmd);
+
+    var pDataWithoutCrc = Buffer.concat([authIdBuffer, cmdBuffer, payload]);
+    var checksum = crc.crc16ccitt(pDataWithoutCrc);
+    var checksumBuffer = new Buffer(2);
+    checksumBuffer.writeUInt16LE(checksum);
+    var pData = Buffer.concat([pDataWithoutCrc, checksumBuffer]);
+
+    var lenBuffer = new Buffer(2);
+    lenBuffer.writeUInt16LE(pData.length);
+
+    var aData = Buffer.concat([nonce, authIdBuffer, lenBuffer]);
+
+    this.dataStillToSend = Buffer.concat([aData, pData]);
+    // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
+};
+
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
@@ -33,7 +55,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
     } else if (data.length > 200) {
         callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
     } else {
-        var nonce = data.slice(0, 24);
+        var nonceABF = data.slice(0, 24);
         var authorizationId = data.readUInt32LE(24);
         var messageLen = data.readUInt16LE(28);
         var encryptedMessage = data.slice(30);
@@ -57,23 +79,47 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                 var prefixBuff = new Buffer(16);
                 prefixBuff.fill(0);
 
-                var decryptedMessge = sodium.api.crypto_secretbox_open(Buffer.concat([prefixBuff, encryptedMessage]), nonce, sharedSecret);
+                var decryptedMessge = sodium.api.crypto_secretbox_open(Buffer.concat([prefixBuff, encryptedMessage]), nonceABF, sharedSecret);
                 console.log("decrypted message: ", decryptedMessge);
 
                 if (nukiConstants.crcOk(decryptedMessge)) {
                     console.log("CRC ok");
                     var authorizationIdFromEncryptedMessage = decryptedMessge.readUInt32LE(0);
+                    console.log("authorization-id: " + authorizationIdFromEncryptedMessage);
                     var cmdId = decryptedMessge.readUInt16LE(4);
                     var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
                     console.log("command id: 0x" + cmdIdBuf.toString('hex'));
-                    var payload = decryptedMessge.slice(5, decryptedMessge.length - 2);
+                    var payload = decryptedMessge.slice(6, decryptedMessge.length - 2);
                     console.log("payload", payload);
-                    /*
-                     UserSpecificDataInputOutputCharacteristic write: <Buffer c6 5e f5 b4 44 b3 09 62 31 58 ae 6e 5e bd 28 e3 0e 89 90 99 75 cb 3b 39 08 00 00 00 1a 00 c3 98 22 2c d7 57 bf 82 4b cf 21 79 99 f1 04 e0 5e 79 fa f0 ... >
-                     UserSpecificDataInputOutputCharacteristic write: <Buffer b0 38 af b2 84 00 34 3f f2 75 c6 0c ee 2f a9 1e 8e 20 94 2b 56 8d 3c 60 08 00 00 00 1a 00 64 54 bb b2 89 4e 23 d6 28 d2 9b 12 7d 50 bc b8 65 fb 25 30 ... >
-                     UserSpecificDataInputOutputCharacteristic write: <Buffer 8c 46 69 78 39 d1 e4 06 f8 3b a7 a0 16 af 26 cf 5b d6 7b ea 8d a3 2b 4b 08 00 00 00 18 00 18 0e fc 95 5c d4 e6 b7 bf ed 14 7d 10 cf af c8 05 53 58 26 ... >
-                     UserSpecificDataInputOutputCharacteristic write: <Buffer 71 69 78 68 15 13 2d 5e b5 3a 2a bc 71 3e 0b f9 4b 25 41 12 01 98 8a e9 08 00 00 00 1a 00 10 66 fa 6c d6 d3 f2 f0 c3 9d 40 85 52 f3 d7 61 c5 85 c3 24 ... >
-                     */
+
+                    switch (cmdId) {
+                        case nukiConstants.CMD_REQUEST_DATA:
+                            console.log("CL sent CMD_REQUEST_DATA");
+                            var dataId = payload.readUInt16LE(0);
+                            switch (dataId) {
+                                case nukiConstants.CMD_CHALLENGE:
+                                    console.log("CL requests challenge");
+                                    var nonceK = new Buffer(24);    // nonce in ADATA is 24 bytes
+                                    sodium.api.randombytes_buf(nonceK);
+
+                                    this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, nonceK);
+                                    while (this.dataStillToSend.length > 0) {
+                                        value = this.getNextChunk(this.dataStillToSend);
+                                        if (this._updateValueCallback && value.length > 0) {
+                                            console.log("SL sending challenge...");
+                                            this._updateValueCallback(value);
+                                        }
+                                    }
+
+                                    break;
+                                case nukiConstants.REQUEST_CONFIG:
+                                    console.log("CL requests config");
+                                    break;
+                                default:
+                                    console.log("CL requests " + dataId);
+                            }
+                            break;
+                    }
                     callback(this.RESULT_SUCCESS);
                 } else {
                     console.log("ERROR: crc not ok");
@@ -101,5 +147,42 @@ UserSpecificDataInputOutputCharacteristic.prototype.onReadRequest = function (of
         callback(this.RESULT_SUCCESS, data);
     }
 };
+
+UserSpecificDataInputOutputCharacteristic.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
+    console.log('UserSpecificDataInputOutputCharacteristic - onSubscribe');
+
+    this._updateValueCallback = updateValueCallback;
+
+    if (this.dataStillToSend.length > 0) {
+        while (this.dataStillToSend.length > 0) {
+            var value = this.getNextChunk(this.dataStillToSend);
+            if (value.length > 0) {
+                console.log("sending " + value.length + " bytes from onSubscribe");
+                updateValueCallback(value);
+            }
+        }
+    } else {
+        console.log("don't have more data to notify");
+    }
+};
+
+UserSpecificDataInputOutputCharacteristic.prototype.onUnsubscribe = function () {
+    console.log('UserSpecificDataInputOutputCharacteristic - onUnsubscribe');
+
+    this._updateValueCallback = null;
+};
+
+UserSpecificDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
+    var block0;
+    if (data.length > 20) {
+        block0 = data.slice(0, 20);
+        this.dataStillToSend = data.slice(20);
+    } else {
+        block0 = data;
+        this.dataStillToSend = new Buffer(0);
+    }
+    return block0;
+};
+
 
 module.exports = UserSpecificDataInputOutputCharacteristic;
