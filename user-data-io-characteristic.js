@@ -186,7 +186,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
                                 pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
                                 timezoneOffset, dstMode, hasFob, fobAction1, fobAction3, fobAction3]);
-                            this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, configData);
+                            this.prepareEncryptedDataToSend(nukiConstants.CONFIG, authorizationId, nonceABF, sharedSecret, configData);
                             while (this.dataStillToSend.length > 0) {
                                 value = this.getNextChunk(this.dataStillToSend);
                                 if (this._updateValueCallback && value.length > 0) {
