@@ -122,11 +122,9 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     break;
                                 case nukiConstants.CMD_NUKI_STATES:
                                     console.log("CL sent CMD_NUKI_STATES");
-                                    nonce = payload;
-                                    console.log("Nonce", nonce, nonce.length);
 
-                                    var nukiState = new Buffer(1);
-                                    nukiState.writeUInt8(1);  // pairing mode
+                                    var nukiState = new Buffer(2);
+                                    nukiState.writeUInt8(0);  // door mode
 
                                     var lockState = new Buffer(1);
                                     lockState.writeUInt8(1);  // locked
