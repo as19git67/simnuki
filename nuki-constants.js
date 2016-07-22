@@ -12,6 +12,7 @@ module.exports.CMD_STATUS = 0x0E;
 module.exports.CMD_NUKI_STATES = 0x0C;
 module.exports.CMD_REQUEST_CONFIG = 0x14;
 module.exports.CMD_CONFIG = 0x15;
+module.exports.CMD_UPDATE_PIN = 0x20;
 module.exports.CMD_UPDATE_TIME = 0x21;
 
 module.exports.STATUS_COMPLETE = 0x00;

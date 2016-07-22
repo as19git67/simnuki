@@ -27,6 +27,21 @@ function UserSpecificDataInputOutputCharacteristic(keys, config) {
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);
 
+UserSpecificDataInputOutputCharacteristic.prototype.sendStatusComplete = function (authorizationId) {
+    if (this._updateValueCallback) {
+        var wCmdBuf = new Buffer(7);
+        wCmdBuf.writeUInt32LE(authorizationId, 0);
+        wCmdBuf.writeUInt16LE(nukiConstants.CMD_STATUS, 4);
+        wCmdBuf.writeUInt8(nukiConstants.STATUS_COMPLETE, 6);
+        var checksum = crc.crc16ccitt(wCmdBuf);
+        var checksumBuffer = new Buffer(2);
+        checksumBuffer.writeUInt16LE(checksum);
+        var value = Buffer.concat([wCmdBuf, checksumBuffer]);
+        console.log("STATUS COMPLETE", value);
+        this._updateValueCallback(value);
+    }
+};
+
 UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend = function (cmd, authorizationId, nonce, sharedSecret, payload) {
 
     var authIdBuffer = new Buffer(4);
@@ -229,21 +244,16 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 }
                             }
                             break;
+                        case nukiConstants.CMD_UPDATE_PIN:
+                            console.log("CL sent CMD_UPDATE_PIN");
+                            nonceK = payload.slice(0, 32);
+                            var pin = payload.slice(32);
+                            console.log("PIN ", pin);
+                            this.sendStatusComplete(authorizationId);
+                            break;
                         case nukiConstants.CMD_UPDATE_TIME:
                             console.log("CL sent CMD_UPDATE_TIME");
-
-                            if (this._updateValueCallback) {
-                                var wCmdBuf = new Buffer(7);
-                                wCmdBuf.writeUInt32LE(authorizationId, 0);
-                                wCmdBuf.writeUInt16LE(nukiConstants.CMD_STATUS, 4);
-                                wCmdBuf.writeUInt8(nukiConstants.STATUS_COMPLETE, 6);
-                                var checksum = crc.crc16ccitt(wCmdBuf);
-                                var checksumBuffer = new Buffer(2);
-                                checksumBuffer.writeUInt16LE(checksum);
-                                value = Buffer.concat([wCmdBuf, checksumBuffer]);
-                                console.log("STATUS COMPLETE", value);
-                                this._updateValueCallback(value);
-                            }
+                            this.sendStatusComplete(authorizationId);
                     }
                     callback(this.RESULT_SUCCESS);
                 } else {
