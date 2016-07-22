@@ -40,12 +40,19 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
     checksumBuffer.writeUInt16LE(checksum);
     var pData = Buffer.concat([pDataWithoutCrc, checksumBuffer]);
 
+    var pDataEncrypted = sodium.api.crypto_secretbox(pData, nonce, sharedSecret);
+    console.log("encrypted message: ", pDataEncrypted);
+
     var lenBuffer = new Buffer(2);
-    lenBuffer.writeUInt16LE(pData.length);
+    lenBuffer.writeUInt16LE(pDataEncrypted.length);
 
     var aData = Buffer.concat([nonce, authIdBuffer, lenBuffer]);
 
-    this.dataStillToSend = Buffer.concat([aData, pData]);
+    console.log("aData: ", aData);
+    console.log("pData: ", pData);
+    console.log("pDataEncrypted: ", pDataEncrypted);
+
+    this.dataStillToSend = Buffer.concat([aData, pDataEncrypted]);
     // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 };
 
@@ -107,7 +114,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     while (this.dataStillToSend.length > 0) {
                                         value = this.getNextChunk(this.dataStillToSend);
                                         if (this._updateValueCallback && value.length > 0) {
-                                            console.log("SL sending challenge...");
+                                            console.log("SL sending challenge...", value, value.length);
                                             this._updateValueCallback(value);
                                         }
                                     }
