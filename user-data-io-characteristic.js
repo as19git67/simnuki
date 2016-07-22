@@ -233,7 +233,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             console.log("CL sent CMD_UPDATE_TIME");
 
 
-                            if (this._updateValueCallback && value.length > 0) {
+                            if (this._updateValueCallback) {
                                 var stBuf = Buffer.concat([
                                     new Buffer(2).writeUInt16LE(nukiConstants.CMD_STATUS),
                                     new Buffer([nukiConstants.STATUS_COMPLETE])]);
