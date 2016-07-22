@@ -54,7 +54,10 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
 
                 console.log("message len: " + messageLen + ", encrypted message len: " + encryptedMessage.length);
 
-                var decryptedMessge = sodium.api.crypto_secretbox_open(encryptedMessage, nonce, sharedSecret);
+                var prefixBuff = new Buffer(16);
+                prefixBuff.fill(0);
+
+                var decryptedMessge = sodium.api.crypto_secretbox_open(Buffer.concat([prefixBuff, encryptedMessage]), nonce, sharedSecret);
                 console.log("decrypted message: ", decryptedMessge);
 
                 if (nukiConstants.crcOk(decryptedMessge)) {
