@@ -22,6 +22,7 @@ function UserSpecificDataInputOutputCharacteristic(keys, config) {
     });
     this.keys = keys;
     this.config = config;
+    this.dataStillToSend = new Buffer(0);
 }
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);
