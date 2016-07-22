@@ -78,7 +78,7 @@ bleno.on('stateChange', function (state) {
 
         var typeBuf = new Buffer([0x21]);   // data type 0x21 means "Service Data - 128-bit UUID"
         var uuidBuf = new Buffer(keyturnerPairingService.uuid, 'hex');
-        console.log("Length of uuid: " + uuidBuf.length);
+        // console.log("Length of uuid: " + uuidBuf.length);
         var uuidReverseBuf = new Buffer(uuidBuf.length);
         for (var i = 0; i < uuidReverseBuf.length; i++) {
             uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
@@ -86,7 +86,7 @@ bleno.on('stateChange', function (state) {
         var serviceDataBuf = new Buffer(nukiIdStr, 'hex');
         var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
         var len = advDataBuf.length;
-        console.log("Length of adv data: " + len);
+        // console.log("Length of adv data: " + len);
         var lenBuf = new Buffer(1);
         lenBuf.writeUInt8(len);
 
@@ -99,8 +99,8 @@ bleno.on('stateChange', function (state) {
         localNamePrefixBuf.writeUInt8(completeLocalNameBuf.length + 1);
         localNamePrefixBuf.writeUInt8(0x09, 1); // data type 0x09 means "Complete Local Name"
         var scanDataBuf = Buffer.concat([localNamePrefixBuf, completeLocalNameBuf]);
-        console.log("Advertising with ", advBuf);
-        console.log("Scan data ", scanDataBuf);
+        // console.log("Advertising with ", advBuf);
+        // console.log("Scan data ", scanDataBuf);
         bleno.startAdvertisingWithEIRData(advBuf, scanDataBuf, function (err) {
             if (err) {
                 console.log("ERROR: startAdvertisingWithEIRData failed:", err);
