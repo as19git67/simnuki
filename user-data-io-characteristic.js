@@ -50,7 +50,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
 
     console.log("aData: ", aData);
     console.log("pData: ", pData);
-    console.log("pDataEncrypted: ", pDataEncrypted);
+    // console.log("pDataEncrypted: ", pDataEncrypted);
 
     this.dataStillToSend = Buffer.concat([aData, pDataEncrypted]);
     // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
@@ -109,23 +109,94 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL requests challenge");
                                     var nonceK = new Buffer(24);    // nonce in ADATA is 24 bytes
                                     sodium.api.randombytes_buf(nonceK);
+                                    console.log("nonceK", nonceK);
 
                                     this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, nonceK);
                                     while (this.dataStillToSend.length > 0) {
                                         value = this.getNextChunk(this.dataStillToSend);
                                         if (this._updateValueCallback && value.length > 0) {
-                                            console.log("SL sending challenge...", value, value.length);
+                                            // console.log("SL sending challenge...", value, value.length);
                                             this._updateValueCallback(value);
                                         }
                                     }
 
                                     break;
-                                case nukiConstants.REQUEST_CONFIG:
-                                    console.log("CL requests config");
-                                    break;
                                 default:
                                     console.log("CL requests " + dataId);
                             }
+                            break;
+                        case nukiConstants.REQUEST_CONFIG:
+                            console.log("CL requests config");
+                            var nonce = payload;
+                            console.log("Nonce", nonce, nonce.length);
+
+                            var nukiIdStr = this.config.get('nukiId');
+                            var nukiId = new Buffer(nukiIdStr, 'hex');
+                            var nameStr = 'Nuki_' + nukiIdStr;
+
+                            var nameBuffer = new Buffer(32).fill(' ');
+                            var name = new Buffer(nameStr);
+                            if (name.length > nameBuffer.length) {
+                                name.copy(nameBuffer, 0, 0, nameBuffer.length);
+                            } else {
+                                name.copy(nameBuffer, 0, 0, name.length);
+                            }
+                            var latitude = 48.2454575;
+                            var longitude = 10.981113917;
+                            var latBuffer = new Buffer(4);
+                            latBuffer.writeFloatLE(latitude);
+                            var longitudeBuffer = new Buffer(4);
+                            longitudeBuffer.writeFloatLE(longitude);
+
+                            var autoUnlatch = new Buffer(1);
+                            autoUnlatch.writeUInt8(0);
+                            var pairingEnabled = new Buffer(1);
+                            pairingEnabled.writeUInt8(1);
+                            var buttonEnabled = new Buffer(1);
+                            buttonEnabled.writeUInt8(1);
+                            var ledEnabled = new Buffer(1);
+                            ledEnabled.writeUInt8(1);
+                            var ledBrightness = new Buffer(1);
+                            ledBrightness.writeUInt8(3);
+
+                            var d = new Date();
+                            var currentTimeBuffer = new Buffer(7);
+                            currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
+                            currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
+                            currentTimeBuffer.writeUInt8(d.getDate(), 3);
+                            currentTimeBuffer.writeUInt8(d.getHours(), 4);
+                            currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
+                            currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
+
+                            var timezoneOffset = new Buffer(2);
+                            timezoneOffset.writeInt16LE(d.getTimezoneOffset());
+
+                            var dstMode = new Buffer(1);
+                            dstMode.writeUInt8(1);  // 0x01 european
+
+                            var hasFob = new Buffer(1);
+                            hasFob.writeUInt8(0);
+
+                            var fobAction1 = new Buffer(1);
+                            fobAction1.writeUInt8(1);   // unlock
+                            var fobAction2 = new Buffer(1);
+                            fobAction2.writeUInt8(2);   // lock
+                            var fobAction3 = new Buffer(1);
+                            fobAction3.writeUInt8(0);   // nothing
+
+                            var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
+                                pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
+                                timezoneOffset, dstMode, hasFob, fobAction1, fobAction3, fobAction3]);
+                            this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonce, sharedSecret, configData);
+                            while (this.dataStillToSend.length > 0) {
+                                value = this.getNextChunk(this.dataStillToSend);
+                                if (this._updateValueCallback && value.length > 0) {
+                                    console.log("SL sending config data...", value, value.length);
+                                    this._updateValueCallback(value);
+                                }
+                            }
+
+
                             break;
                     }
                     callback(this.RESULT_SUCCESS);

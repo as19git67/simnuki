@@ -24,6 +24,7 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     var arrUUID = new Array(16);
     uuid.v1(null, arrUUID);
     config.set('uuid', new Buffer(arrUUID).toString('hex'));
+    config.set('nukiId', nukiIdStr);
     config.save(function (err) {
         if (err) {
             console.log("Writing configuration failed", err);

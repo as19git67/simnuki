@@ -10,6 +10,7 @@ module.exports.CMD_AUTHORIZATION_ID = 0x07;
 module.exports.CMD_AUTHORIZATION_ID_CONFIRMATION = 0x1E;
 module.exports.CMD_STATUS = 0x0E;
 module.exports.REQUEST_CONFIG = 0x14;
+module.exports.CONFIG = 0x15;
 
 module.exports.STATUS_COMPLETE = 0x00;
 module.exports.STATUS_ACCEPTED = 0x01;
