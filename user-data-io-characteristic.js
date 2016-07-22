@@ -57,7 +57,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
 
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var nonce, d, currentTimeBuffer, timezoneOffset, value;
-    console.log("UserSpecificDataInputOutputCharacteristic write:", data);
+    // console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
     } else if (data.length > 200) {
