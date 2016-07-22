@@ -1,6 +1,3 @@
-var fs = require('fs');
-var path = require('path');
-var nconf = require('nconf');
 var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
