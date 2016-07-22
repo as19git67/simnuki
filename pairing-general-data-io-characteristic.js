@@ -4,7 +4,6 @@ var nconf = require('nconf');
 var util = require('util');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
-var crc = require('crc');
 var sodium = require('sodium');
 var HSalsa20 = require('./hsalsa20');
 var crypto = require('crypto');
