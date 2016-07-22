@@ -41,22 +41,22 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
     var pData = Buffer.concat([pDataWithoutCrc, checksumBuffer]);
 
     var pDataEncrypted = sodium.api.crypto_secretbox(pData, nonce, sharedSecret).slice(16); // skip first 16 bytes
-    console.log("encrypted message: ", pDataEncrypted);
+    // console.log("encrypted message: ", pDataEncrypted);
 
     var lenBuffer = new Buffer(2);
     lenBuffer.writeUInt16LE(pDataEncrypted.length);
 
     var aData = Buffer.concat([nonce, authIdBuffer, lenBuffer]);
 
-    console.log("aData: ", aData);
-    console.log("pData: ", pData);
-    // console.log("pDataEncrypted: ", pDataEncrypted);
+    // console.log("aData: ", aData);
+    // console.log("pData: ", pData);
 
     this.dataStillToSend = Buffer.concat([aData, pDataEncrypted]);
     // console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
+    var nonce, d, currentTimeBuffer, timezoneOffset;
     console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
@@ -124,9 +124,9 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL requests " + dataId);
                             }
                             break;
-                        case nukiConstants.REQUEST_CONFIG:
-                            console.log("CL requests config");
-                            var nonce = payload;
+                        case nukiConstants.CMD_REQUEST_CONFIG:
+                            console.log("CL sent CMD_REQUEST_CONFIG");
+                            nonce = payload;
                             console.log("Nonce", nonce, nonce.length);
 
                             var nukiIdStr = this.config.get('nukiId');
@@ -158,8 +158,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var ledBrightness = new Buffer(1);
                             ledBrightness.writeUInt8(3);
 
-                            var d = new Date();
-                            var currentTimeBuffer = new Buffer(7);
+                            d = new Date();
+                            currentTimeBuffer = new Buffer(7);
                             currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
                             currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
                             currentTimeBuffer.writeUInt8(d.getDate(), 3);
@@ -167,7 +167,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
                             currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
 
-                            var timezoneOffset = new Buffer(2);
+                            timezoneOffset = new Buffer(2);
                             timezoneOffset.writeInt16LE(d.getTimezoneOffset());
 
                             var dstMode = new Buffer(1);
@@ -186,15 +186,50 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
                                 pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
                                 timezoneOffset, dstMode, hasFob, fobAction1, fobAction3, fobAction3]);
-                            this.prepareEncryptedDataToSend(nukiConstants.CONFIG, authorizationId, nonceABF, sharedSecret, configData);
+                            this.prepareEncryptedDataToSend(nukiConstants.CMD_CONFIG, authorizationId, nonceABF, sharedSecret, configData);
                             while (this.dataStillToSend.length > 0) {
                                 value = this.getNextChunk(this.dataStillToSend);
                                 if (this._updateValueCallback && value.length > 0) {
-                                    console.log("SL sending config data...", value, value.length);
+                                    // console.log("SL sending config data...", value, value.length);
                                     this._updateValueCallback(value);
                                 }
                             }
+                            break;
+                        case nukiConstants.CMD_NUKI_STATES:
+                            console.log("CL sent CMD_NUKI_STATES");
+                            nonce = payload;
+                            console.log("Nonce", nonce, nonce.length);
 
+                            var nukiState = new Buffer(1);
+                            nukiState.writeUInt8(1);  // pairing mode
+
+                            var lockState = new Buffer(1);
+                            lockState.writeUInt8(1);  // locked
+
+                            var trigger = new Buffer(1);
+                            trigger.writeUInt8(0);  // bluetooth
+
+                            d = new Date();
+                            currentTimeBuffer = new Buffer(7);
+                            currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
+                            currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
+                            currentTimeBuffer.writeUInt8(d.getDate(), 3);
+                            currentTimeBuffer.writeUInt8(d.getHours(), 4);
+                            currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
+                            currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
+
+                            timezoneOffset = new Buffer(2);
+                            timezoneOffset.writeInt16LE(d.getTimezoneOffset());
+
+                            var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset]);
+                            this.prepareEncryptedDataToSend(nukiConstants.CMD_NUKI_STATES, authorizationId, nonceABF, sharedSecret, nukiStates);
+                            while (this.dataStillToSend.length > 0) {
+                                value = this.getNextChunk(this.dataStillToSend);
+                                if (this._updateValueCallback && value.length > 0) {
+                                    // console.log("SL sending config data...", value, value.length);
+                                    this._updateValueCallback(value);
+                                }
+                            }
 
                             break;
                     }
