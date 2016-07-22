@@ -107,7 +107,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             switch (dataId) {
                                 case nukiConstants.CMD_CHALLENGE:
                                     console.log("CL requests challenge");
-                                    var nonceK = new Buffer(24);    // nonce in ADATA is 24 bytes
+                                    var nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                                     sodium.api.randombytes_buf(nonceK);
                                     console.log("nonceK", nonceK);
 
