@@ -120,6 +120,43 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     }
 
                                     break;
+                                case nukiConstants.CMD_NUKI_STATES:
+                                    console.log("CL sent CMD_NUKI_STATES");
+                                    nonce = payload;
+                                    console.log("Nonce", nonce, nonce.length);
+
+                                    var nukiState = new Buffer(1);
+                                    nukiState.writeUInt8(1);  // pairing mode
+
+                                    var lockState = new Buffer(1);
+                                    lockState.writeUInt8(1);  // locked
+
+                                    var trigger = new Buffer(1);
+                                    trigger.writeUInt8(0);  // bluetooth
+
+                                    d = new Date();
+                                    currentTimeBuffer = new Buffer(7);
+                                    currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
+                                    currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
+                                    currentTimeBuffer.writeUInt8(d.getDate(), 3);
+                                    currentTimeBuffer.writeUInt8(d.getHours(), 4);
+                                    currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
+                                    currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
+
+                                    timezoneOffset = new Buffer(2);
+                                    timezoneOffset.writeInt16LE(d.getTimezoneOffset());
+
+                                    var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset]);
+                                    this.prepareEncryptedDataToSend(nukiConstants.CMD_NUKI_STATES, authorizationId, nonceABF, sharedSecret, nukiStates);
+                                    while (this.dataStillToSend.length > 0) {
+                                        value = this.getNextChunk(this.dataStillToSend);
+                                        if (this._updateValueCallback && value.length > 0) {
+                                            // console.log("SL sending config data...", value, value.length);
+                                            this._updateValueCallback(value);
+                                        }
+                                    }
+
+                                    break;
                                 default:
                                     console.log("CL requests " + dataId);
                             }
@@ -194,43 +231,6 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     this._updateValueCallback(value);
                                 }
                             }
-                            break;
-                        case nukiConstants.CMD_NUKI_STATES:
-                            console.log("CL sent CMD_NUKI_STATES");
-                            nonce = payload;
-                            console.log("Nonce", nonce, nonce.length);
-
-                            var nukiState = new Buffer(1);
-                            nukiState.writeUInt8(1);  // pairing mode
-
-                            var lockState = new Buffer(1);
-                            lockState.writeUInt8(1);  // locked
-
-                            var trigger = new Buffer(1);
-                            trigger.writeUInt8(0);  // bluetooth
-
-                            d = new Date();
-                            currentTimeBuffer = new Buffer(7);
-                            currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
-                            currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
-                            currentTimeBuffer.writeUInt8(d.getDate(), 3);
-                            currentTimeBuffer.writeUInt8(d.getHours(), 4);
-                            currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
-                            currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
-
-                            timezoneOffset = new Buffer(2);
-                            timezoneOffset.writeInt16LE(d.getTimezoneOffset());
-
-                            var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset]);
-                            this.prepareEncryptedDataToSend(nukiConstants.CMD_NUKI_STATES, authorizationId, nonceABF, sharedSecret, nukiStates);
-                            while (this.dataStillToSend.length > 0) {
-                                value = this.getNextChunk(this.dataStillToSend);
-                                if (this._updateValueCallback && value.length > 0) {
-                                    // console.log("SL sending config data...", value, value.length);
-                                    this._updateValueCallback(value);
-                                }
-                            }
-
                             break;
                     }
                     callback(this.RESULT_SUCCESS);
