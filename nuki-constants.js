@@ -12,3 +12,10 @@ module.exports.STATUS_COMPLETE = 0x00;
 module.exports.STATUS_ACCEPTED = 0x01;
 
 module.exports.NUKI_NONCEBYTES = 32;
+
+module.exports.crcOk = function (dataTocheck) {
+    var dataForCrc = dataTocheck.slice(0, dataTocheck.length - 2);
+    var crcSumCalc = crc.crc16ccitt(dataForCrc);
+    var crcSumRetrieved = dataTocheck.readUInt16LE(dataTocheck.length - 2);
+    return crcSumCalc === crcSumRetrieved;
+};

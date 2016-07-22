@@ -66,12 +66,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_SL_SEND_AUTHORIZAT
 PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_AUTHORIZATION_ID_CONFIRMATION = 8;
 
 
-PairingGeneralDataInputOutputCharacteristic.prototype.crcOk = function (dataTocheck) {
-    var dataForCrc = dataTocheck.slice(0, dataTocheck.length - 2);
-    var crcSumCalc = crc.crc16ccitt(dataForCrc);
-    var crcSumRetrieved = dataTocheck.readUInt16LE(dataTocheck.length - 2);
-    return crcSumCalc === crcSumRetrieved;
-};
+PairingGeneralDataInputOutputCharacteristic.prototype.crcOk = nukiConstants.crcOk;
 
 PairingGeneralDataInputOutputCharacteristic.prototype.getNextChunk = function (data) {
     var block0;
