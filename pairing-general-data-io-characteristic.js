@@ -1,4 +1,5 @@
 var util = require('util');
+var crc = require('crc');
 var nukiConstants = require('./nuki-constants');
 var _ = require('underscore');
 var sodium = require('sodium');
