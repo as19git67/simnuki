@@ -125,7 +125,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                         if (slPk.length > 0) {
                             this.prepareDataToSend(nukiConstants.CMD_ID_PUBLIC_KEY, slPk);
                             this.state = PairingGeneralDataInputOutputCharacteristic.prototype.PAIRING_CL_SEND_PUBKEY;
-                            console.log("sending ", this.dataStillToSend);
                             while (this.dataStillToSend.length > 0) {
                                 value = this.getNextChunk(this.dataStillToSend);
                                 if (this._updateValueCallback && value.length > 0) {
