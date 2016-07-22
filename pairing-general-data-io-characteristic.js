@@ -94,8 +94,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onReadRequest = function (
 
 PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var cmdId, slPk, value, clCr, cr;
-    console.log("PairingGeneralDataInputOutputCharacteristic data: ", data);
-    console.log("PairingGeneralDataInputOutputCharacteristic state: ", this.state);
+    // console.log("PairingGeneralDataInputOutputCharacteristic data: ", data);
+    // console.log("PairingGeneralDataInputOutputCharacteristic state: ", this.state);
 
     if (this.crcOk(data)) {
         // console.log("checksum is ok");
@@ -109,7 +109,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                     var rCmd = data.readUInt16LE(0);
                     cmdId = data.readUInt16LE(2);
                     if (rCmd === nukiConstants.CMD_reqUEST_DATA && cmdId === nukiConstants.CMD_ID_PUBLIC_KEY) {
-                        console.log("ok");
                         slPk = new Buffer(0);
                         if (Buffer.isBuffer(this.keys.slPk)) {
                             slPk = this.keys.slPk;
@@ -130,7 +129,7 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                             while (this.dataStillToSend.length > 0) {
                                 value = this.getNextChunk(this.dataStillToSend);
                                 if (this._updateValueCallback && value.length > 0) {
-                                    console.log("Step xx: sending one time challenge...");
+                                    console.log("Step 4: SL sending PK...");
                                     this._updateValueCallback(value);
                                 }
                             }
