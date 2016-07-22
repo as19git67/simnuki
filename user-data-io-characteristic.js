@@ -64,7 +64,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                     console.log("CRC ok");
                     var authorizationIdFromEncryptedMessage = decryptedMessge.readUInt32LE(0);
                     var cmdId = decryptedMessge.readUInt16LE(4);
-                    console.log("command id: 0x" + cmdId.toString('hex'));
+                    var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
+                    console.log("command id: 0x" + cmdIdBuf.toString('hex'));
                     var payload = decryptedMessge.slice(5, decryptedMessge.length - 2);
                     console.log("payload", payload);
                     /*
