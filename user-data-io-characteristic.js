@@ -40,7 +40,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
     checksumBuffer.writeUInt16LE(checksum);
     var pData = Buffer.concat([pDataWithoutCrc, checksumBuffer]);
 
-    var pDataEncrypted = sodium.api.crypto_secretbox(pData, nonce, sharedSecret);
+    var pDataEncrypted = sodium.api.crypto_secretbox(pData, nonce, sharedSecret).slice(16); // skip first 16 bytes
     console.log("encrypted message: ", pDataEncrypted);
 
     var lenBuffer = new Buffer(2);
