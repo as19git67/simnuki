@@ -27,12 +27,11 @@ function UserSpecificDataInputOutputCharacteristic(keys, config) {
 
 util.inherits(UserSpecificDataInputOutputCharacteristic, BlenoCharacteristic);
 
-UserSpecificDataInputOutputCharacteristic.prototype.sendStatus = function (authorizationId, status) {
+UserSpecificDataInputOutputCharacteristic.prototype.sendStatus = function (status) {
     if (this._updateValueCallback) {
-        var wCmdBuf = new Buffer(7);
-        wCmdBuf.writeUInt32LE(authorizationId, 0);
-        wCmdBuf.writeUInt16LE(nukiConstants.CMD_STATUS, 4);
-        wCmdBuf.writeUInt8(status, 6);
+        var wCmdBuf = new Buffer(3);
+        wCmdBuf.writeUInt16LE(nukiConstants.CMD_STATUS, 0);
+        wCmdBuf.writeUInt8(status, 2);
         var checksum = crc.crc16ccitt(wCmdBuf);
         var checksumBuffer = new Buffer(2);
         checksumBuffer.writeUInt16LE(checksum);
@@ -249,11 +248,11 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             nonceK = payload.slice(0, 32);
                             var pin = payload.slice(32);
                             console.log("PIN ", pin);
-                            this.sendStatus(authorizationId, nukiConstants.STATUS_ACCEPTED);
+                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
                             break;
                         case nukiConstants.CMD_UPDATE_TIME:
                             console.log("CL sent CMD_UPDATE_TIME");
-                        //this.sendStatus(authorizationId, nukiConstants.STATUS_ACCEPTED);
+                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
                     }
                     callback(this.RESULT_SUCCESS);
                 } else {
