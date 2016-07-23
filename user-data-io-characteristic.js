@@ -91,8 +91,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
         self.sendStatus(nukiConstants.STATUS_ACCEPTED);
         setTimeout(function () {
             self.config.set("lockState", 1); // locked
+            console.log("locked");
             self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-
             self.config.save(function (err) {
                 if (err) {
                     console.log("Writing configuration failed", err);
@@ -100,6 +100,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                 } else {
                     setTimeout(function () {
                         self.config.set("lockState", 2); // unlocking
+                        console.log("unlocking");
+                        self.sendStatus(nukiConstants.STATUS_ACCEPTED);
                         self.config.save(function (err) {
                             if (err) {
                                 console.log("Writing configuration failed", err);
@@ -107,6 +109,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             } else {
                                 setTimeout(function () {
                                     self.config.set("lockState", 3); // unlocked
+                                    console.log("unlocked");
+                                    self.sendStatus(nukiConstants.STATUS_ACCEPTED);
                                     self.config.save(function (err) {
                                         if (err) {
                                             console.log("Writing configuration failed", err);
@@ -114,6 +118,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                         } else {
                                             setTimeout(function () {
                                                 self.config.set("lockState", 5); // unlatched
+                                                console.log("unlatched");
+                                                self.sendStatus(nukiConstants.STATUS_ACCEPTED);
                                                 self.config.save(function (err) {
                                                     if (err) {
                                                         console.log("Writing configuration failed", err);
@@ -121,25 +127,27 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                                     } else {
                                                         setTimeout(function () {
                                                             self.config.set("lockState", 1); // locked
+                                                            console.log("locked");
+                                                            self.sendStatus(nukiConstants.STATUS_COMPLETE);
                                                             self.config.save(function (err) {
                                                                 if (err) {
                                                                     console.log("Writing configuration failed", err);
                                                                     self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
                                                                 }
                                                             });
-                                                        }, 8000);
+                                                        }, 2000);
                                                     }
                                                 });
-                                            }, 3000);
+                                            }, 1000);
                                         }
                                     });
-                                }, 4000);
+                                }, 1000);
                             }
                         });
-                    }, 1000);
+                    }, 500);
                 }
             });
-        }, 5000);
+        }, 1000);
     }
 
     if (offset) {
