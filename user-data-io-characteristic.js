@@ -215,8 +215,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 case nukiConstants.CMD_NUKI_STATES:
                                     console.log("CL sent CMD_NUKI_STATES");
 
-                                    var nukiState = new Buffer(2);
-                                    nukiState.writeUInt8(0);  // door mode
+                                    var nukiState = new Buffer(1);
+                                    nukiState.writeUInt8(this.config.get("nukiState"));
 
                                     var lockState = new Buffer(1);
                                     lockState.writeUInt8(this.config.get("lockState") || 0);

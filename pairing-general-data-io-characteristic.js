@@ -354,6 +354,8 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 sharedSecret: this.keys.sharedSecret.toString('hex')
                             };
                             this.config.set("users", this.users);
+                            this.config.set('nukiState', 2); // door mode
+
                             this.config.save(function (err) {
                                 if (err) {
                                     console.log("ERROR: writing configuration with new authorization id failed", err);

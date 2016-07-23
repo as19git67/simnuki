@@ -25,6 +25,7 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     uuid.v1(null, arrUUID);
     config.set('uuid', new Buffer(arrUUID).toString('hex'));
     config.set('nukiId', nukiIdStr);
+    config.set('nukiState', 1); // pairing mode
     config.save(function (err) {
         if (err) {
             console.log("Writing configuration failed", err);
