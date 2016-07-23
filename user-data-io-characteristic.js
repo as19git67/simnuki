@@ -91,6 +91,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
         self.sendStatus(nukiConstants.STATUS_ACCEPTED);
         setTimeout(function () {
             self.config.set("lockState", 1); // locked
+            self.sendStatus(nukiConstants.STATUS_ACCEPTED);
+
             self.config.save(function (err) {
                 if (err) {
                     console.log("Writing configuration failed", err);
