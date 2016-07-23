@@ -86,6 +86,26 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
     var nonce, d, currentTimeBuffer, timezoneOffset, value, pin, savedPin;
     // console.log("UserSpecificDataInputOutputCharacteristic write:", data);
+    function simulateCalibration() {
+        var self = this;
+        self.sendStatus(nukiConstants.STATUS_ACCEPTED);
+        setTimeout(function () {
+            self.config.set("lockState", 1); // locked
+            setTimeout(function () {
+                self.config.set("lockState", 2); // unlocking
+                setTimeout(function () {
+                    self.config.set("lockState", 3); // unlocked
+                    setTimeout(function () {
+                        self.config.set("lockState", 5); // unlatched
+                        setTimeout(function () {
+                            self.config.set("lockState", 1); // locked
+                        }, 8000);
+                    }, 3000);
+                }, 4000);
+            }, 1000);
+        }, 5000);
+    }
+
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
     } else if (data.length > 200) {
@@ -155,7 +175,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     nukiState.writeUInt8(0);  // door mode
 
                                     var lockState = new Buffer(1);
-                                    lockState.writeUInt8(1);  // locked
+                                    lockState.writeUInt8(this.config.get("lockState") || 0);
 
                                     var trigger = new Buffer(1);
                                     trigger.writeUInt8(0);  // bluetooth
@@ -324,7 +344,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     if (savedPin === pin) {
                                         console.log("PIN verified ok");
                                         console.log("Calibrating");
-                                        this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                        simulateCalibration.call(this);
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
