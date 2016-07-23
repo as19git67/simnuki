@@ -84,7 +84,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var nonce, d, currentTimeBuffer, timezoneOffset, value;
+    var nonce, d, currentTimeBuffer, timezoneOffset, value, pin, savedPin;
     // console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     if (offset) {
         callback(this.RESULT_ATTR_NOT_LONG);
@@ -312,12 +312,31 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 }
                             }
                             break;
+                        case nukiConstants.CMD_REQUEST_CALIBRATION:
+                            console.log("CL sent CMD_REQUEST_CALIBRATION");
+                            this.nonceK = payload.slice(0, 32);
+                            pin = payload.readUInt16LE(32);
+                            console.log("PIN ", pin);
+                            savedPin = this.config.get("adminPin");
+                            if (savedPin) {
+                                if (savedPin === pin) {
+                                    console.log("PIN verified ok");
+                                    console.log("Calibrating");
+                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                } else {
+                                    console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                    this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                }
+                            } else {
+                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            }
+                            break;
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
                             this.nonceK = payload.slice(0, 32);
-                            var pin = payload.readUInt16LE(32);
+                            pin = payload.readUInt16LE(32);
                             console.log("PIN ", pin);
-                            var savedPin = this.config.get("adminPin");
+                            savedPin = this.config.get("adminPin");
                             if (savedPin) {
                                 if (savedPin === pin) {
                                     console.log("PIN verified ok");
