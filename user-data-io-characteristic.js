@@ -136,7 +136,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL requests challenge");
                                     this.nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                                     sodium.api.randombytes_buf(this.nonceK);
-                                    console.log("nonceK", this.nonceK);
+                                    console.log("NEW nonceK", this.nonceK);
 
                                     this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, this.nonceK);
                                     while (this.dataStillToSend.length > 0) {
@@ -202,10 +202,10 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var setFobAction1 = payload.readUInt8(48);
                             var setFobAction2 = payload.readUInt8(49);
                             var setFobAction3 = payload.readUInt8(50);
-                            nonceABF = payload.slice(51, 51 + 32);
+                            nonce = payload.slice(51, 51 + 32);
                             var setPin = payload.readUInt16LE(51 + 32);
 
-                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
                                 console.log("nonce verified ok");
 
                                 this.config.set("name", setName.toString().trim());
