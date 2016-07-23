@@ -342,19 +342,27 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
                             nonceABF = payload.slice(0, 32);
-                            pin = payload.readUInt16LE(32);
-                            console.log("PIN ", pin);
-                            savedPin = this.config.get("adminPin");
-                            if (savedPin) {
-                                if (savedPin === pin) {
-                                    console.log("PIN verified ok");
-                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+
+                                pin = payload.readUInt16LE(32);
+                                console.log("PIN ", pin);
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin) {
+                                    if (savedPin === pin) {
+                                        console.log("PIN verified ok");
+                                        this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    }
                                 } else {
-                                    console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
                                 }
                             } else {
-                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
                         case nukiConstants.CMD_UPDATE_TIME:
