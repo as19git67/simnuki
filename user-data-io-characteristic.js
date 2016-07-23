@@ -314,26 +314,34 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             break;
                         case nukiConstants.CMD_REQUEST_CALIBRATION:
                             console.log("CL sent CMD_REQUEST_CALIBRATION");
-                            this.nonceK = payload.slice(0, 32);
-                            pin = payload.readUInt16LE(32);
-                            console.log("PIN ", pin);
-                            savedPin = this.config.get("adminPin");
-                            if (savedPin) {
-                                if (savedPin === pin) {
-                                    console.log("PIN verified ok");
-                                    console.log("Calibrating");
-                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            nonceABF = payload.slice(0, 32);
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                                console.log("nonce verified ok");
+                                pin = payload.readUInt16LE(32);
+                                console.log("PIN ", pin);
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin) {
+                                    if (savedPin === pin) {
+                                        console.log("PIN verified ok");
+                                        console.log("Calibrating");
+                                        this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    }
                                 } else {
-                                    console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
                                 }
                             } else {
-                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
-                            this.nonceK = payload.slice(0, 32);
+                            nonceABF = payload.slice(0, 32);
                             pin = payload.readUInt16LE(32);
                             console.log("PIN ", pin);
                             savedPin = this.config.get("adminPin");
