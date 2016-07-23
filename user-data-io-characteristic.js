@@ -36,7 +36,21 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendStatus = function (statu
         var checksumBuffer = new Buffer(2);
         checksumBuffer.writeUInt16LE(checksum);
         var value = Buffer.concat([wCmdBuf, checksumBuffer]);
-        console.log("STATUS COMPLETE", value);
+        this._updateValueCallback(value);
+    }
+};
+
+UserSpecificDataInputOutputCharacteristic.prototype.sendError = function (status, cmdId) {
+    if (this._updateValueCallback) {
+        var wCmdBuf = new Buffer(5);
+        wCmdBuf.writeUInt16LE(nukiConstants.CMD_ERROR, 0);
+        wCmdBuf.writeUInt8(status, 2);
+        wCmdBuf.writeUInt16LE(cmdId, 3);
+        var checksum = crc.crc16ccitt(wCmdBuf);
+        var checksumBuffer = new Buffer(2);
+        checksumBuffer.writeUInt16LE(checksum);
+        var value = Buffer.concat([wCmdBuf, checksumBuffer]);
+        console.log("STATUS ERROR", value);
         this._updateValueCallback(value);
     }
 };
@@ -173,6 +187,59 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL requests " + dataId);
                             }
                             break;
+                        case nukiConstants.CMD_SET_CONFIG:
+                            console.log("CL sent CMD_SET_CONFIG");
+                            var setName = payload.slice(0, 32);
+                            var setLatitude = payload.readFloatLE(32);
+                            var setLongitude = payload.readFloatLE(36);
+                            var setAutoUnlatch = payload.readUInt8(40);
+                            var setPairingEnabled = payload.readUInt8(41);
+                            var setButtonEnabled = payload.readUInt8(42);
+                            var setLedFlashEnabled = payload.readUInt8(43);
+                            var setLedBrightness = payload.readUInt8(44);
+                            var setTimezoneOffset = payload.readInt16LE(45);
+                            var setDstMode = payload.readUInt8(47);
+                            var setFobAction1 = payload.readUInt8(48);
+                            var setFobAction2 = payload.readUInt8(49);
+                            var setFobAction3 = payload.readUInt8(50);
+                            nonceABF = payload.slice(51, 51 + 32);
+                            var setPin = payload.readUInt16LE(51 + 32);
+
+                            if (Buffer.compare(nonceK, nonceABF) === 0) {
+                                console.log("nonce verified ok");
+
+                                this.config.set("name", setName.toString().trim());
+                                this.config.set("latitude", setLatitude);
+                                this.config.set("longitude", setLongitude);
+                                this.config.set("autoUnlatch", setAutoUnlatch);
+                                this.config.set("pairingEnabled", setPairingEnabled);
+                                this.config.set("buttonEnabled", setButtonEnabled);
+                                this.config.set("ledFlashEnabled", setLedFlashEnabled);
+                                this.config.set("ledBrightness", setLedBrightness);
+                                this.config.set("timezoneOffset", setTimezoneOffset);
+                                this.config.set("dstMode", setDstMode);
+                                this.config.set("fobAction1", setFobAction1);
+                                this.config.set("fobAction2", setFobAction2);
+                                this.config.set("fobAction3", setFobAction3);
+                                this.config.set("adminPin", setPin);
+                                var self = this;
+                                config.save(function (err) {
+                                    if (err) {
+                                        console.log("Writing configuration failed", err);
+                                        self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                                    } else {
+                                        console.log("Configuration saved");
+                                        self.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    }
+                                });
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+
+                            break;
                         case nukiConstants.CMD_REQUEST_CONFIG:
                             console.log("CL sent CMD_REQUEST_CONFIG");
                             nonce = payload;
@@ -180,8 +247,10 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
 
                             var nukiIdStr = this.config.get('nukiId');
                             var nukiId = new Buffer(nukiIdStr, 'hex');
-                            var nameStr = 'Nuki_' + nukiIdStr;
-
+                            var nameStr = this.config.get("name");
+                            if (!nameStr) {
+                                nameStr = 'Nuki_' + nukiIdStr;
+                            }
                             var nameBuffer = new Buffer(32).fill(' ');
                             var name = new Buffer(nameStr);
                             if (name.length > nameBuffer.length) {
@@ -189,23 +258,23 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             } else {
                                 name.copy(nameBuffer, 0, 0, name.length);
                             }
-                            var latitude = 48.2454575;
-                            var longitude = 10.981113917;
+                            var latitude = this.config.get("latitude") || 0;
+                            var longitude = this.config.get("longitude") || 0;
                             var latBuffer = new Buffer(4);
                             latBuffer.writeFloatLE(latitude);
                             var longitudeBuffer = new Buffer(4);
                             longitudeBuffer.writeFloatLE(longitude);
 
                             var autoUnlatch = new Buffer(1);
-                            autoUnlatch.writeUInt8(0);
+                            autoUnlatch.writeUInt8(this.config.get("autoUnlatch") || 0);
                             var pairingEnabled = new Buffer(1);
-                            pairingEnabled.writeUInt8(1);
+                            pairingEnabled.writeUInt8(this.config.get("pairingEnabled") === null ? 1 : this.config.get("pairingEnabled"));
                             var buttonEnabled = new Buffer(1);
-                            buttonEnabled.writeUInt8(1);
+                            buttonEnabled.writeUInt8(this.config.get("buttonEnabled") === null ? 1 : this.config.get("buttonEnabled"));
                             var ledEnabled = new Buffer(1);
-                            ledEnabled.writeUInt8(1);
+                            ledEnabled.writeUInt8(this.config.get("ledEnabled") === null ? 1 : this.config.get("ledEnabled"));
                             var ledBrightness = new Buffer(1);
-                            ledBrightness.writeUInt8(3);
+                            ledBrightness.writeUInt8(this.config.get("ledBrightness") === null ? 3 : this.config.get("ledBrightness"));
 
                             d = new Date();
                             currentTimeBuffer = new Buffer(7);
@@ -220,17 +289,17 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             timezoneOffset.writeInt16LE(d.getTimezoneOffset());
 
                             var dstMode = new Buffer(1);
-                            dstMode.writeUInt8(1);  // 0x01 european
+                            dstMode.writeUInt8(this.config.get("dstMode") === null ? 1 : this.config.get("dstMode"));  // 0x01 european
 
                             var hasFob = new Buffer(1);
-                            hasFob.writeUInt8(0);
+                            hasFob.writeUInt8(1);
 
                             var fobAction1 = new Buffer(1);
-                            fobAction1.writeUInt8(1);   // unlock
+                            fobAction1.writeUInt8(this.config.get("fobAction1") === null ? 1 : this.config.get("fobAction1"));   // unlock
                             var fobAction2 = new Buffer(1);
-                            fobAction2.writeUInt8(2);   // lock
+                            fobAction2.writeUInt8(this.config.get("fobAction2") === null ? 2 : this.config.get("fobAction2"));   // lock
                             var fobAction3 = new Buffer(1);
-                            fobAction3.writeUInt8(0);   // nothing
+                            fobAction3.writeUInt8(this.config.get("fobAction3") || 0);   // nothing
 
                             var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
                                 pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
@@ -246,9 +315,20 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
                             nonceK = payload.slice(0, 32);
-                            var pin = payload.slice(32);
+                            var pin = payload.readUInt16LE(32);
                             console.log("PIN ", pin);
-                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            var savedPin = this.config.get("adminPin");
+                            if (savedPin) {
+                                if (savedPin === pin) {
+                                    console.log("PIN verified ok");
+                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                } else {
+                                    console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                    this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                }
+                            } else {
+                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            }
                             break;
                         case nukiConstants.CMD_UPDATE_TIME:
                             console.log("CL sent CMD_UPDATE_TIME");
