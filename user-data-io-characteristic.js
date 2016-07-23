@@ -236,7 +236,10 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     timezoneOffset = new Buffer(2);
                                     timezoneOffset.writeInt16LE(d.getTimezoneOffset());
 
-                                    var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset]);
+                                    var criticalBatteryState = new Buffer(1);
+                                    criticalBatteryState.writeUInt8(0); // ok
+
+                                    var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset, criticalBatteryState]);
                                     this.prepareEncryptedDataToSend(nukiConstants.CMD_NUKI_STATES, authorizationId, nonceABF, sharedSecret, nukiStates);
                                     while (this.dataStillToSend.length > 0) {
                                         value = this.getNextChunk(this.dataStillToSend);
