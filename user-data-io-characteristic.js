@@ -105,9 +105,9 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                 console.log("decrypted message: ", decryptedMessge);
 
                 if (nukiConstants.crcOk(decryptedMessge)) {
-                    console.log("CRC ok");
+                    // console.log("CRC ok");
                     var authorizationIdFromEncryptedMessage = decryptedMessge.readUInt32LE(0);
-                    console.log("authorization-id: " + authorizationIdFromEncryptedMessage);
+                    // console.log("authorization-id: " + authorizationIdFromEncryptedMessage);
                     var cmdId = decryptedMessge.readUInt16LE(4);
                     var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
                     console.log("command id: 0x" + cmdIdBuf.toString('hex'));
@@ -244,8 +244,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 }
                             }
                             break;
-                        case nukiConstants.CMD_UPDATE_PIN:
-                            console.log("CL sent CMD_UPDATE_PIN");
+                        case nukiConstants.CMD_VERIFY_PIN:
+                            console.log("CL sent CMD_VERIFY_PIN");
                             nonceK = payload.slice(0, 32);
                             var pin = payload.slice(32);
                             console.log("PIN ", pin);
