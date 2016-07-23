@@ -221,7 +221,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     nukiState.writeUInt8(nukiStateFromConfig);
 
                                     var lockState = new Buffer(1);
-                                    lockState.writeUInt8(this.config.get("lockState") || 0);
+                                    lockState.writeUInt8(this.config.get("lockState") || 1);
 
                                     var trigger = new Buffer(1);
                                     trigger.writeUInt8(0);  // bluetooth
