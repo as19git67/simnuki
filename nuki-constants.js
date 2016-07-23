@@ -7,14 +7,15 @@ module.exports.CMD_CHALLENGE = 0x04;
 module.exports.CMD_AUTHORIZATION_AUTHENTICATOR = 0x05;
 module.exports.CMD_AUTHORIZATION_DATA = 0x06;
 module.exports.CMD_AUTHORIZATION_ID = 0x07;
-module.exports.CMD_AUTHORIZATION_ID_CONFIRMATION = 0x1E;
-module.exports.CMD_STATUS = 0x0E;
+module.exports.CMD_AUTHORIZATION_DATA_INVITE = 0x0B;
 module.exports.CMD_NUKI_STATES = 0x0C;
+module.exports.CMD_STATUS = 0x0E;
 module.exports.CMD_ERROR = 0x12;
 module.exports.CMD_SET_CONFIG = 0x13;
 module.exports.CMD_REQUEST_CONFIG = 0x14;
 module.exports.CMD_CONFIG = 0x15;
 module.exports.CMD_REQUEST_CALIBRATION = 0x1A;
+module.exports.CMD_AUTHORIZATION_ID_CONFIRMATION = 0x1E;
 module.exports.CMD_VERIFY_PIN = 0x20;
 module.exports.CMD_UPDATE_TIME = 0x21;
 

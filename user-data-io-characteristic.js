@@ -368,6 +368,13 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                         case nukiConstants.CMD_UPDATE_TIME:
                             console.log("CL sent CMD_UPDATE_TIME");
                             this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            break;
+                        case nukiConstants.CMD_AUTHORIZATION_DATA_INVITE:
+                            console.log("CL sent CMD_AUTHORIZATION_DATA_INVITE");
+
+                            // todo
+
+                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
                     }
                     callback(this.RESULT_SUCCESS);
                 } else {
