@@ -91,18 +91,52 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
         self.sendStatus(nukiConstants.STATUS_ACCEPTED);
         setTimeout(function () {
             self.config.set("lockState", 1); // locked
-            setTimeout(function () {
-                self.config.set("lockState", 2); // unlocking
-                setTimeout(function () {
-                    self.config.set("lockState", 3); // unlocked
+            self.config.save(function (err) {
+                if (err) {
+                    console.log("Writing configuration failed", err);
+                    self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                } else {
                     setTimeout(function () {
-                        self.config.set("lockState", 5); // unlatched
-                        setTimeout(function () {
-                            self.config.set("lockState", 1); // locked
-                        }, 8000);
-                    }, 3000);
-                }, 4000);
-            }, 1000);
+                        self.config.set("lockState", 2); // unlocking
+                        self.config.save(function (err) {
+                            if (err) {
+                                console.log("Writing configuration failed", err);
+                                self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                            } else {
+                                setTimeout(function () {
+                                    self.config.set("lockState", 3); // unlocked
+                                    self.config.save(function (err) {
+                                        if (err) {
+                                            console.log("Writing configuration failed", err);
+                                            self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                                        } else {
+                                            setTimeout(function () {
+                                                self.config.set("lockState", 5); // unlatched
+                                                self.config.save(function (err) {
+                                                    if (err) {
+                                                        console.log("Writing configuration failed", err);
+                                                        self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                                                    } else {
+                                                        setTimeout(function () {
+                                                            self.config.set("lockState", 1); // locked
+                                                            self.config.save(function (err) {
+                                                                if (err) {
+                                                                    console.log("Writing configuration failed", err);
+                                                                    self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
+                                                                }
+                                                            });
+                                                        }, 8000);
+                                                    }
+                                                });
+                                            }, 3000);
+                                        }
+                                    });
+                                }, 4000);
+                            }
+                        });
+                    }, 1000);
+                }
+            });
         }, 5000);
     }
 
