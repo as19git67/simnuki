@@ -216,7 +216,9 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL sent CMD_NUKI_STATES");
 
                                     var nukiState = new Buffer(1);
-                                    nukiState.writeUInt8(this.config.get("nukiState"));
+                                    var nukiStateFromConfig = this.config.get("nukiState");
+                                    console.log("nuki state", nukiStateFromConfig);
+                                    nukiState.writeUInt8(nukiStateFromConfig);
 
                                     var lockState = new Buffer(1);
                                     lockState.writeUInt8(this.config.get("lockState") || 0);
@@ -335,13 +337,13 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var autoUnlatch = new Buffer(1);
                             autoUnlatch.writeUInt8(this.config.get("autoUnlatch") || 0);
                             var pairingEnabled = new Buffer(1);
-                            pairingEnabled.writeUInt8(this.config.get("pairingEnabled") === null ? 1 : this.config.get("pairingEnabled"));
+                            pairingEnabled.writeUInt8(this.config.get("pairingEnabled") == null ? 1 : this.config.get("pairingEnabled"));
                             var buttonEnabled = new Buffer(1);
-                            buttonEnabled.writeUInt8(this.config.get("buttonEnabled") === null ? 1 : this.config.get("buttonEnabled"));
+                            buttonEnabled.writeUInt8(this.config.get("buttonEnabled") == null ? 1 : this.config.get("buttonEnabled"));
                             var ledEnabled = new Buffer(1);
-                            ledEnabled.writeUInt8(this.config.get("ledEnabled") === null ? 1 : this.config.get("ledEnabled"));
+                            ledEnabled.writeUInt8(this.config.get("ledEnabled") == null ? 1 : this.config.get("ledEnabled"));
                             var ledBrightness = new Buffer(1);
-                            ledBrightness.writeUInt8(this.config.get("ledBrightness") === null ? 3 : this.config.get("ledBrightness"));
+                            ledBrightness.writeUInt8(this.config.get("ledBrightness") == null ? 3 : this.config.get("ledBrightness"));
 
                             d = new Date();
                             currentTimeBuffer = new Buffer(7);
@@ -356,15 +358,15 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             timezoneOffset.writeInt16LE(d.getTimezoneOffset());
 
                             var dstMode = new Buffer(1);
-                            dstMode.writeUInt8(this.config.get("dstMode") === null ? 1 : this.config.get("dstMode"));  // 0x01 european
+                            dstMode.writeUInt8(this.config.get("dstMode") == null ? 1 : this.config.get("dstMode"));  // 0x01 european
 
                             var hasFob = new Buffer(1);
                             hasFob.writeUInt8(1);
 
                             var fobAction1 = new Buffer(1);
-                            fobAction1.writeUInt8(this.config.get("fobAction1") === null ? 1 : this.config.get("fobAction1"));   // unlock
+                            fobAction1.writeUInt8(this.config.get("fobAction1") == null ? 1 : this.config.get("fobAction1"));   // unlock
                             var fobAction2 = new Buffer(1);
-                            fobAction2.writeUInt8(this.config.get("fobAction2") === null ? 2 : this.config.get("fobAction2"));   // lock
+                            fobAction2.writeUInt8(this.config.get("fobAction2") == null ? 2 : this.config.get("fobAction2"));   // lock
                             var fobAction3 = new Buffer(1);
                             fobAction3.writeUInt8(this.config.get("fobAction3") || 0);   // nothing
 
