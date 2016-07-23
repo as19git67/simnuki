@@ -223,7 +223,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 this.config.set("fobAction3", setFobAction3);
                                 this.config.set("adminPin", setPin);
                                 var self = this;
-                                config.save(function (err) {
+                                this.config.save(function (err) {
                                     if (err) {
                                         console.log("Writing configuration failed", err);
                                         self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
