@@ -134,11 +134,11 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             switch (dataId) {
                                 case nukiConstants.CMD_CHALLENGE:
                                     console.log("CL requests challenge");
-                                    var nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
-                                    sodium.api.randombytes_buf(nonceK);
-                                    console.log("nonceK", nonceK);
+                                    this.nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                                    sodium.api.randombytes_buf(this.nonceK);
+                                    console.log("nonceK", this.nonceK);
 
-                                    this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, nonceK);
+                                    this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, this.nonceK);
                                     while (this.dataStillToSend.length > 0) {
                                         value = this.getNextChunk(this.dataStillToSend);
                                         if (this._updateValueCallback && value.length > 0) {
@@ -205,7 +205,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             nonceABF = payload.slice(51, 51 + 32);
                             var setPin = payload.readUInt16LE(51 + 32);
 
-                            if (Buffer.compare(nonceK, nonceABF) === 0) {
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
                                 console.log("nonce verified ok");
 
                                 this.config.set("name", setName.toString().trim());
@@ -234,7 +234,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 });
                             } else {
                                 console.log("ERROR: nonce differ");
-                                console.log("nonceK", nonceK);
+                                console.log("nonceK", this.nonceK);
                                 console.log("nonceABF", nonceABF);
                                 this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
@@ -314,7 +314,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             break;
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
-                            nonceK = payload.slice(0, 32);
+                            this.nonceK = payload.slice(0, 32);
                             var pin = payload.readUInt16LE(32);
                             console.log("PIN ", pin);
                             var savedPin = this.config.get("adminPin");
