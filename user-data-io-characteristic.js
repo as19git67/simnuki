@@ -377,14 +377,14 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 if (savedPin) {
                                     if (savedPin === pin) {
                                         console.log("PIN verified ok");
-                                        console.log("Calibrating");
                                         simulateCalibration.call(this);
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
                                     }
                                 } else {
-                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    console.log("Calibrating");
+                                    simulateCalibration.call(this);
                                 }
                             } else {
                                 console.log("ERROR: nonce differ");
