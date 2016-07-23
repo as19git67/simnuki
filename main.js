@@ -123,11 +123,27 @@ bleno.on('accept', function (address) {
     keys.slPk = slKeys.pk().get();
     keys.slSk = slKeys.sk().get();
     keyturnerPairingService = new KeyturnerPairingService(keys, config);
-    bleno.setServices([
-        keyturnerInitializationService,
-        keyturnerPairingService,
-        keyturnerService
-    ]);
+    var lockState = config.get("lockState");
+    if (lockState > 0) {
+        if (config.get('pairingEnabled') === null || config.get('pairingEnabled') === 1) {
+            console.log("Pairing is enabled");
+            bleno.setServices([
+                keyturnerPairingService,
+                keyturnerService
+            ]);
+        } else {
+            bleno.setServices([
+                keyturnerService
+            ]);
+        }
+    } else {
+        console.log("Nuki is not initialized");
+        bleno.setServices([
+            keyturnerInitializationService,
+            keyturnerPairingService,
+            keyturnerService
+        ]);
+    }
 });
 
 bleno.on('disconnect', function () {
