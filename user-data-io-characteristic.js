@@ -171,7 +171,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
             //  appType: appType,
             //  sharedSecret: this.keys.sharedSecret.toString('hex')
 
-            if (user.sharedSecret) {
+            if (user && user.sharedSecret) {
                 var sharedSecret = new Buffer(user.sharedSecret, 'hex');
 
 
