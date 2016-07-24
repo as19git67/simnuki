@@ -354,7 +354,6 @@ PairingGeneralDataInputOutputCharacteristic.prototype.onWriteRequest = function 
                                 sharedSecret: this.keys.sharedSecret.toString('hex')
                             };
                             this.config.set("users", this.users);
-                            this.config.set('nukiState', 1); // door mode
 
                             this.config.save(function (err) {
                                 if (err) {

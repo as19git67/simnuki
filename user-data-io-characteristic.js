@@ -425,6 +425,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
                                     }
                                 } else {
+                                    this.config.set('nukiState', 2); // door mode
                                     this.sendStatus(nukiConstants.STATUS_COMPLETE);
                                 }
                             } else {
