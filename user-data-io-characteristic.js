@@ -134,6 +134,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (targetState, authorizationId, nonce, sharedSecret) {
+    var fobAction;
     var self = this;
     this.lockCommands = [];
     switch (targetState) {
@@ -153,15 +154,15 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
             this.lockCommands = [2, 3, 5, 4, 1];
             break;
         case 81: // fob action 1
-            let fobAction = this.config.get('fobAction1');
+            fobAction = this.config.get('fobAction1');
             this.determineFobAction(fobAction);
             break;
         case 82: // fob action 2
-            let fobAction = this.config.get('fobAction2');
+            fobAction = this.config.get('fobAction2');
             this.determineFobAction(fobAction);
             break;
         case 83: // fob action 3
-            let fobAction = this.config.get('fobAction3');
+            fobAction = this.config.get('fobAction3');
             this.determineFobAction(fobAction);
             break;
         default:
