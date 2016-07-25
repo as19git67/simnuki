@@ -118,7 +118,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
 
     this.sendQueueTimeout = setTimeout(function () {
         if (self.sendQueue.length > 0) {
-            self.sendAndWait.call(self);
+            self.sendAndWait.call(self, authorizationId, nonce, sharedSecret);
         } else {
             self.sendQueueTimeout = undefined;
             self.sendStatus(nukiConstants.STATUS_COMPLETE);
