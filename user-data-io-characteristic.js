@@ -474,8 +474,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             break;
                         case nukiConstants.CMD_REQUEST_CALIBRATION:
                             console.log("CL sent CMD_REQUEST_CALIBRATION");
-                            nonceABF = payload.slice(0, 32);
-                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                            nonce = payload.slice(0, 32);
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
                                 pin = payload.readUInt16LE(32);
                                 console.log("PIN ", pin);
                                 savedPin = this.config.get("adminPin");
@@ -494,14 +494,14 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             } else {
                                 console.log("ERROR: nonce differ");
                                 console.log("nonceK", this.nonceK);
-                                console.log("nonceABF", nonceABF);
+                                console.log("nonce", nonce);
                                 this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
-                            nonceABF = payload.slice(0, 32);
-                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                            nonce = payload.slice(0, 32);
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
 
                                 pin = payload.readUInt16LE(32);
                                 console.log("PIN ", pin);
@@ -521,7 +521,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             } else {
                                 console.log("ERROR: nonce differ");
                                 console.log("nonceK", this.nonceK);
-                                console.log("nonceABF", nonceABF);
+                                console.log("nonce", nonce);
                                 this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
@@ -540,8 +540,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             console.log("CL sent CMD_REMOVE_AUTHORIZATION_ENTRY");
 
                             var authIdToRemove = payload.readUInt32LE(0);
-                            nonceABF = payload.slice(4, 4 + 32);
-                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                            nonce = payload.slice(4, 4 + 32);
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
 
                                 pin = payload.readUInt16LE(4 + 32);
 
@@ -564,7 +564,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             } else {
                                 console.log("ERROR: nonce differ");
                                 console.log("nonceK", this.nonceK);
-                                console.log("nonceABF", nonceABF);
+                                console.log("nonce", nonce);
                                 this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
@@ -582,48 +582,48 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             if (u) {
                                 var name = u.name.trim();
                                 var flags = payload.readUInt8(5);
-                                nonceABF = payload.slice(6, 6 + 32);
-                                if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                                nonce = payload.slice(6, 6 + 32);
+                                if (Buffer.compare(this.nonceK, nonce) === 0) {
                                     switch (lockAction) {
                                         case 1: // unlock
                                             console.log("UNLOCKING DOOR by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 2: // lock
                                             console.log("LOCKING DOOR by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 3: // unlatch
                                             console.log("UNLATCHING DOOR by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 4: // lock'n'go (unlock - wait - lock)
                                             console.log("LOCK'N GO DOOR by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
                                             console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 81: // fob action 1
                                             console.log("EXECUTING FOB ACTION 1 by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 82: // fob action 2
                                             console.log("EXECUTING FOB ACTION 2 by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 83: // fob action 3
                                             console.log("EXECUTING FOB ACTION 3 by " + name);
                                             this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         default:
                                             console.log("ERROR: lock action sent with unknown lock action (" + lockAction + "). Ignoring.");
@@ -632,7 +632,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 } else {
                                     console.log("ERROR: nonce differ");
                                     console.log("nonceK", this.nonceK);
-                                    console.log("nonceABF", nonceABF);
+                                    console.log("nonce", nonce);
                                     this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                                 }
                             } else {
