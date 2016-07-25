@@ -572,7 +572,12 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
 
                             var lockAction = payload.readUInt8(0);
                             var appId = payload.readUInt32LE(1);
-                            var u = _.findWhere(this.users, {appId: appId});
+                            var us = [];
+                            _.each(this.users, function (user) {
+                                us.push(user);
+                            });
+
+                            var u = _.findWhere(us, {appId: appId});
                             if (u) {
                                 var name = u.name.trim();
                                 var flags = payload.readUInt8(5);
