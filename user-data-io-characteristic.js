@@ -137,22 +137,22 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
 UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (targetState, authorizationId, nonce, sharedSecret) {
     var fobAction;
     var self = this;
-    this.lockCommands = [];
+    this.sendQueue = [];
     switch (targetState) {
         case 1: // unlock
-            this.lockCommands = [2, 3];
+            this.sendQueue = [2, 3];
             break;
         case 2: // lock
-            this.lockCommands = [4, 1];
+            this.sendQueue = [4, 1];
             break;
         case 3: // unlatch
-            this.lockCommands = [2, 3, 5];
+            this.sendQueue = [2, 3, 5];
             break;
         case 4: // lock'n'go (unlock - wait - lock)
-            this.lockCommands = [2, 3, 4, 1];
+            this.sendQueue = [2, 3, 4, 1];
             break;
         case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
-            this.lockCommands = [2, 3, 5, 4, 1];
+            this.sendQueue = [2, 3, 5, 4, 1];
             break;
         case 81: // fob action 1
             fobAction = this.config.get('fobAction1');
@@ -170,7 +170,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
     }
 
     if (!this.sendQueueTimeout) {
-        if (this.lockCommands.length > 0) {
+        if (this.sendQueue.length > 0) {
             self.sendAndWait(authorizationId, nonce, sharedSecret);
         }
     }
