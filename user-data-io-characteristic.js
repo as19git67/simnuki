@@ -129,6 +129,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
         var lockStateFromQueue = self.sendQueue[0];
         self.config.set('lockState', lockStateFromQueue);
         console.log("send nuki states. lock state: " + lockStateFromQueue);
+        console.log("sendAndWait - nonce:", nonce);
         self.sendNukiStates(authorizationId, nonce, sharedSecret);
         self.sendQueue.shift();
     }
@@ -171,6 +172,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
 
     if (!this.sendQueueTimeout) {
         if (this.sendQueue.length > 0) {
+            console.log("simulateLock - nonce:", nonce);
             self.sendAndWait(authorizationId, nonce, sharedSecret);
         }
     }
