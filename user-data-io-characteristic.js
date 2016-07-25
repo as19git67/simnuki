@@ -317,249 +317,311 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                     var cmdId = decryptedMessge.readUInt16LE(4);
                     var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
                     var payload = decryptedMessge.slice(6, decryptedMessge.length - 2);
-                    if (messageLen === payload.length) {
-                        switch (cmdId) {
-                            case nukiConstants.CMD_REQUEST_DATA:
-                                console.log("CL sent CMD_REQUEST_DATA");
-                                var dataId = payload.readUInt16LE(0);
-                                switch (dataId) {
-                                    case nukiConstants.CMD_CHALLENGE:
-                                        console.log("CL requests challenge");
-                                        this.nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
-                                        sodium.api.randombytes_buf(this.nonceK);
-                                        console.log("NEW nonceK", this.nonceK);
+                    switch (cmdId) {
+                        case nukiConstants.CMD_REQUEST_DATA:
+                            console.log("CL sent CMD_REQUEST_DATA");
+                            var dataId = payload.readUInt16LE(0);
+                            switch (dataId) {
+                                case nukiConstants.CMD_CHALLENGE:
+                                    console.log("CL requests challenge");
+                                    this.nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
+                                    sodium.api.randombytes_buf(this.nonceK);
+                                    console.log("NEW nonceK", this.nonceK);
 
-                                        this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, this.nonceK);
-                                        while (this.dataStillToSend.length > 0) {
-                                            value = this.getNextChunk(this.dataStillToSend);
-                                            if (this._updateValueCallback && value.length > 0) {
-                                                // console.log("SL sending challenge...", value, value.length);
-                                                this._updateValueCallback(value);
-                                            }
+                                    this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, this.nonceK);
+                                    while (this.dataStillToSend.length > 0) {
+                                        value = this.getNextChunk(this.dataStillToSend);
+                                        if (this._updateValueCallback && value.length > 0) {
+                                            // console.log("SL sending challenge...", value, value.length);
+                                            this._updateValueCallback(value);
                                         }
-
-                                        break;
-                                    case nukiConstants.CMD_NUKI_STATES:
-                                        console.log("CL sent CMD_NUKI_STATES");
-
-                                        this.sendNukiStates(authorizationId, nonceABF, sharedSecret);
-                                        break;
-                                    default:
-                                        console.log("CL requests " + dataId);
-                                }
-                                break;
-                            case nukiConstants.CMD_SET_CONFIG:
-                                console.log("CL sent CMD_SET_CONFIG");
-                                var setName = payload.slice(0, 32);
-                                var setLatitude = payload.readFloatLE(32);
-                                var setLongitude = payload.readFloatLE(36);
-                                var setAutoUnlatch = payload.readUInt8(40);
-                                var setPairingEnabled = payload.readUInt8(41);
-                                var setButtonEnabled = payload.readUInt8(42);
-                                var setLedFlashEnabled = payload.readUInt8(43);
-                                var setLedBrightness = payload.readUInt8(44);
-                                var setTimezoneOffset = payload.readInt16LE(45);
-                                var setDstMode = payload.readUInt8(47);
-                                var setFobAction1 = payload.readUInt8(48);
-                                var setFobAction2 = payload.readUInt8(49);
-                                var setFobAction3 = payload.readUInt8(50);
-                                nonce = payload.slice(51, 51 + 32);
-                                var setPin = payload.readUInt16LE(51 + 32);
-
-                                if (Buffer.compare(this.nonceK, nonce) === 0) {
-
-                                    this.config.set("name", setName.toString().trim());
-                                    this.config.set("latitude", setLatitude);
-                                    this.config.set("longitude", setLongitude);
-                                    this.config.set("autoUnlatch", setAutoUnlatch);
-                                    this.config.set("pairingEnabled", setPairingEnabled);
-                                    this.config.set("buttonEnabled", setButtonEnabled);
-                                    this.config.set("ledFlashEnabled", setLedFlashEnabled);
-                                    this.config.set("ledBrightness", setLedBrightness);
-                                    this.config.set("timezoneOffset", setTimezoneOffset);
-                                    this.config.set("dstMode", setDstMode);
-                                    this.config.set("fobAction1", setFobAction1);
-                                    this.config.set("fobAction2", setFobAction2);
-                                    this.config.set("fobAction3", setFobAction3);
-                                    this.config.set("adminPin", setPin);
-                                    var self = this;
-                                    this.config.save(function (err) {
-                                        if (err) {
-                                            console.log("Writing configuration failed", err);
-                                            self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
-                                        } else {
-                                            console.log("Configuration saved");
-                                            self.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        }
-                                    });
-                                } else {
-                                    console.log("ERROR: nonce differ");
-                                    console.log("nonceK", this.nonceK);
-                                    console.log("nonceABF", nonceABF);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
-                                }
-
-                                break;
-                            case nukiConstants.CMD_REQUEST_CONFIG:
-                                console.log("CL sent CMD_REQUEST_CONFIG");
-                                nonce = payload;
-                                console.log("Nonce", nonce, nonce.length);
-
-                                var nukiIdStr = this.config.get('nukiId');
-                                var nukiId = new Buffer(nukiIdStr, 'hex');
-                                var nameStr = this.config.get("name");
-                                if (!nameStr) {
-                                    nameStr = 'Nuki_' + nukiIdStr;
-                                }
-                                var nameBuffer = new Buffer(32).fill(' ');
-                                var name = new Buffer(nameStr);
-                                if (name.length > nameBuffer.length) {
-                                    name.copy(nameBuffer, 0, 0, nameBuffer.length);
-                                } else {
-                                    name.copy(nameBuffer, 0, 0, name.length);
-                                }
-                                var latitude = this.config.get("latitude") || 0;
-                                var longitude = this.config.get("longitude") || 0;
-                                var latBuffer = new Buffer(4);
-                                latBuffer.writeFloatLE(latitude);
-                                var longitudeBuffer = new Buffer(4);
-                                longitudeBuffer.writeFloatLE(longitude);
-
-                                var autoUnlatch = new Buffer(1);
-                                autoUnlatch.writeUInt8(this.config.get("autoUnlatch") || 0);
-                                var pairingEnabled = new Buffer(1);
-                                pairingEnabled.writeUInt8(this.config.get("pairingEnabled") == null ? 1 : this.config.get("pairingEnabled"));
-                                var buttonEnabled = new Buffer(1);
-                                buttonEnabled.writeUInt8(this.config.get("buttonEnabled") == null ? 1 : this.config.get("buttonEnabled"));
-                                var ledEnabled = new Buffer(1);
-                                ledEnabled.writeUInt8(this.config.get("ledEnabled") == null ? 1 : this.config.get("ledEnabled"));
-                                var ledBrightness = new Buffer(1);
-                                ledBrightness.writeUInt8(this.config.get("ledBrightness") == null ? 3 : this.config.get("ledBrightness"));
-
-                                d = new Date();
-                                currentTimeBuffer = new Buffer(7);
-                                currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
-                                currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
-                                currentTimeBuffer.writeUInt8(d.getDate(), 3);
-                                currentTimeBuffer.writeUInt8(d.getHours(), 4);
-                                currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
-                                currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
-
-                                timezoneOffset = new Buffer(2);
-                                timezoneOffset.writeInt16LE(d.getTimezoneOffset());
-
-                                var dstMode = new Buffer(1);
-                                dstMode.writeUInt8(this.config.get("dstMode") == null ? 1 : this.config.get("dstMode"));  // 0x01 european
-
-                                var hasFob = new Buffer(1);
-                                hasFob.writeUInt8(1);
-
-                                var fobAction1 = new Buffer(1);
-                                fobAction1.writeUInt8(this.config.get("fobAction1") == null ? 1 : this.config.get("fobAction1"));   // unlock
-                                var fobAction2 = new Buffer(1);
-                                fobAction2.writeUInt8(this.config.get("fobAction2") == null ? 2 : this.config.get("fobAction2"));   // lock
-                                var fobAction3 = new Buffer(1);
-                                fobAction3.writeUInt8(this.config.get("fobAction3") || 0);   // nothing
-
-                                var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
-                                    pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
-                                    timezoneOffset, dstMode, hasFob, fobAction1, fobAction3, fobAction3]);
-                                this.prepareEncryptedDataToSend(nukiConstants.CMD_CONFIG, authorizationId, nonceABF, sharedSecret, configData);
-                                while (this.dataStillToSend.length > 0) {
-                                    value = this.getNextChunk(this.dataStillToSend);
-                                    if (this._updateValueCallback && value.length > 0) {
-                                        this._updateValueCallback(value);
                                     }
-                                }
-                                break;
-                            case nukiConstants.CMD_REQUEST_CALIBRATION:
-                                console.log("CL sent CMD_REQUEST_CALIBRATION");
-                                nonceABF = payload.slice(0, 32);
-                                if (Buffer.compare(this.nonceK, nonceABF) === 0) {
-                                    pin = payload.readUInt16LE(32);
-                                    console.log("PIN ", pin);
-                                    savedPin = this.config.get("adminPin");
-                                    if (savedPin) {
-                                        if (savedPin === pin) {
-                                            console.log("PIN verified ok");
-                                            simulateCalibration.call(this);
-                                        } else {
-                                            console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
-                                            this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
-                                        }
+
+                                    break;
+                                case nukiConstants.CMD_NUKI_STATES:
+                                    console.log("CL sent CMD_NUKI_STATES");
+
+                                    this.sendNukiStates(authorizationId, nonceABF, sharedSecret);
+                                    break;
+                                default:
+                                    console.log("CL requests " + dataId);
+                            }
+                            break;
+                        case nukiConstants.CMD_SET_CONFIG:
+                            console.log("CL sent CMD_SET_CONFIG");
+                            var setName = payload.slice(0, 32);
+                            var setLatitude = payload.readFloatLE(32);
+                            var setLongitude = payload.readFloatLE(36);
+                            var setAutoUnlatch = payload.readUInt8(40);
+                            var setPairingEnabled = payload.readUInt8(41);
+                            var setButtonEnabled = payload.readUInt8(42);
+                            var setLedFlashEnabled = payload.readUInt8(43);
+                            var setLedBrightness = payload.readUInt8(44);
+                            var setTimezoneOffset = payload.readInt16LE(45);
+                            var setDstMode = payload.readUInt8(47);
+                            var setFobAction1 = payload.readUInt8(48);
+                            var setFobAction2 = payload.readUInt8(49);
+                            var setFobAction3 = payload.readUInt8(50);
+                            nonce = payload.slice(51, 51 + 32);
+                            var setPin = payload.readUInt16LE(51 + 32);
+
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
+
+                                this.config.set("name", setName.toString().trim());
+                                this.config.set("latitude", setLatitude);
+                                this.config.set("longitude", setLongitude);
+                                this.config.set("autoUnlatch", setAutoUnlatch);
+                                this.config.set("pairingEnabled", setPairingEnabled);
+                                this.config.set("buttonEnabled", setButtonEnabled);
+                                this.config.set("ledFlashEnabled", setLedFlashEnabled);
+                                this.config.set("ledBrightness", setLedBrightness);
+                                this.config.set("timezoneOffset", setTimezoneOffset);
+                                this.config.set("dstMode", setDstMode);
+                                this.config.set("fobAction1", setFobAction1);
+                                this.config.set("fobAction2", setFobAction2);
+                                this.config.set("fobAction3", setFobAction3);
+                                this.config.set("adminPin", setPin);
+                                var self = this;
+                                this.config.save(function (err) {
+                                    if (err) {
+                                        console.log("Writing configuration failed", err);
+                                        self.sendError(nukiConstants.ERROR_UNKNOWN, cmdId);
                                     } else {
-                                        console.log("Calibrating");
+                                        console.log("Configuration saved");
+                                        self.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    }
+                                });
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+
+                            break;
+                        case nukiConstants.CMD_REQUEST_CONFIG:
+                            console.log("CL sent CMD_REQUEST_CONFIG");
+                            nonce = payload;
+                            console.log("Nonce", nonce, nonce.length);
+
+                            var nukiIdStr = this.config.get('nukiId');
+                            var nukiId = new Buffer(nukiIdStr, 'hex');
+                            var nameStr = this.config.get("name");
+                            if (!nameStr) {
+                                nameStr = 'Nuki_' + nukiIdStr;
+                            }
+                            var nameBuffer = new Buffer(32).fill(' ');
+                            var name = new Buffer(nameStr);
+                            if (name.length > nameBuffer.length) {
+                                name.copy(nameBuffer, 0, 0, nameBuffer.length);
+                            } else {
+                                name.copy(nameBuffer, 0, 0, name.length);
+                            }
+                            var latitude = this.config.get("latitude") || 0;
+                            var longitude = this.config.get("longitude") || 0;
+                            var latBuffer = new Buffer(4);
+                            latBuffer.writeFloatLE(latitude);
+                            var longitudeBuffer = new Buffer(4);
+                            longitudeBuffer.writeFloatLE(longitude);
+
+                            var autoUnlatch = new Buffer(1);
+                            autoUnlatch.writeUInt8(this.config.get("autoUnlatch") || 0);
+                            var pairingEnabled = new Buffer(1);
+                            pairingEnabled.writeUInt8(this.config.get("pairingEnabled") == null ? 1 : this.config.get("pairingEnabled"));
+                            var buttonEnabled = new Buffer(1);
+                            buttonEnabled.writeUInt8(this.config.get("buttonEnabled") == null ? 1 : this.config.get("buttonEnabled"));
+                            var ledEnabled = new Buffer(1);
+                            ledEnabled.writeUInt8(this.config.get("ledEnabled") == null ? 1 : this.config.get("ledEnabled"));
+                            var ledBrightness = new Buffer(1);
+                            ledBrightness.writeUInt8(this.config.get("ledBrightness") == null ? 3 : this.config.get("ledBrightness"));
+
+                            d = new Date();
+                            currentTimeBuffer = new Buffer(7);
+                            currentTimeBuffer.writeUInt16LE(d.getFullYear(), 0);
+                            currentTimeBuffer.writeUInt8(d.getMonth() + 1, 2);
+                            currentTimeBuffer.writeUInt8(d.getDate(), 3);
+                            currentTimeBuffer.writeUInt8(d.getHours(), 4);
+                            currentTimeBuffer.writeUInt8(d.getMinutes(), 5);
+                            currentTimeBuffer.writeUInt8(d.getSeconds(), 6);
+
+                            timezoneOffset = new Buffer(2);
+                            timezoneOffset.writeInt16LE(d.getTimezoneOffset());
+
+                            var dstMode = new Buffer(1);
+                            dstMode.writeUInt8(this.config.get("dstMode") == null ? 1 : this.config.get("dstMode"));  // 0x01 european
+
+                            var hasFob = new Buffer(1);
+                            hasFob.writeUInt8(1);
+
+                            var fobAction1 = new Buffer(1);
+                            fobAction1.writeUInt8(this.config.get("fobAction1") == null ? 1 : this.config.get("fobAction1"));   // unlock
+                            var fobAction2 = new Buffer(1);
+                            fobAction2.writeUInt8(this.config.get("fobAction2") == null ? 2 : this.config.get("fobAction2"));   // lock
+                            var fobAction3 = new Buffer(1);
+                            fobAction3.writeUInt8(this.config.get("fobAction3") || 0);   // nothing
+
+                            var configData = Buffer.concat([nukiId, nameBuffer, latBuffer, longitudeBuffer, autoUnlatch,
+                                pairingEnabled, buttonEnabled, ledEnabled, ledBrightness, currentTimeBuffer,
+                                timezoneOffset, dstMode, hasFob, fobAction1, fobAction3, fobAction3]);
+                            this.prepareEncryptedDataToSend(nukiConstants.CMD_CONFIG, authorizationId, nonceABF, sharedSecret, configData);
+                            while (this.dataStillToSend.length > 0) {
+                                value = this.getNextChunk(this.dataStillToSend);
+                                if (this._updateValueCallback && value.length > 0) {
+                                    this._updateValueCallback(value);
+                                }
+                            }
+                            break;
+                        case nukiConstants.CMD_REQUEST_CALIBRATION:
+                            console.log("CL sent CMD_REQUEST_CALIBRATION");
+                            nonceABF = payload.slice(0, 32);
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                                pin = payload.readUInt16LE(32);
+                                console.log("PIN ", pin);
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin) {
+                                    if (savedPin === pin) {
+                                        console.log("PIN verified ok");
                                         simulateCalibration.call(this);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
                                     }
                                 } else {
-                                    console.log("ERROR: nonce differ");
-                                    console.log("nonceK", this.nonceK);
-                                    console.log("nonceABF", nonceABF);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                                    console.log("Calibrating");
+                                    simulateCalibration.call(this);
                                 }
-                                break;
-                            case nukiConstants.CMD_VERIFY_PIN:
-                                console.log("CL sent CMD_VERIFY_PIN");
-                                nonceABF = payload.slice(0, 32);
-                                if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+                            break;
+                        case nukiConstants.CMD_VERIFY_PIN:
+                            console.log("CL sent CMD_VERIFY_PIN");
+                            nonceABF = payload.slice(0, 32);
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
 
-                                    pin = payload.readUInt16LE(32);
-                                    console.log("PIN ", pin);
-                                    savedPin = this.config.get("adminPin");
-                                    if (savedPin) {
-                                        if (savedPin === pin) {
-                                            console.log("PIN verified ok");
-                                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        } else {
-                                            console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
-                                            this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
-                                        }
-                                    } else {
-                                        this.config.set('nukiState', 2); // door mode
+                                pin = payload.readUInt16LE(32);
+                                console.log("PIN ", pin);
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin) {
+                                    if (savedPin === pin) {
+                                        console.log("PIN verified ok");
                                         this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
                                     }
                                 } else {
-                                    console.log("ERROR: nonce differ");
-                                    console.log("nonceK", this.nonceK);
-                                    console.log("nonceABF", nonceABF);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                                    this.config.set('nukiState', 2); // door mode
+                                    this.sendStatus(nukiConstants.STATUS_COMPLETE);
                                 }
-                                break;
-                            case nukiConstants.CMD_UPDATE_TIME:
-                                console.log("CL sent CMD_UPDATE_TIME");
-                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                break;
-                            case nukiConstants.CMD_AUTHORIZATION_DATA_INVITE:
-                                console.log("CL sent CMD_AUTHORIZATION_DATA_INVITE");
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+                            break;
+                        case nukiConstants.CMD_UPDATE_TIME:
+                            console.log("CL sent CMD_UPDATE_TIME");
+                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            break;
+                        case nukiConstants.CMD_AUTHORIZATION_DATA_INVITE:
+                            console.log("CL sent CMD_AUTHORIZATION_DATA_INVITE");
 
-                                // todo
+                            // todo
 
-                                this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                break;
-                            case nukiConstants.CMD_REMOVE_AUTHORIZATION_ENTRY:
-                                console.log("CL sent CMD_REMOVE_AUTHORIZATION_ENTRY");
+                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                            break;
+                        case nukiConstants.CMD_REMOVE_AUTHORIZATION_ENTRY:
+                            console.log("CL sent CMD_REMOVE_AUTHORIZATION_ENTRY");
 
-                                var authIdToRemove = payload.readUInt32LE(0);
-                                nonceABF = payload.slice(4, 4 + 32);
+                            var authIdToRemove = payload.readUInt32LE(0);
+                            nonceABF = payload.slice(4, 4 + 32);
+                            if (Buffer.compare(this.nonceK, nonceABF) === 0) {
+
+                                pin = payload.readUInt16LE(4 + 32);
+
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin != null) {
+                                    if (savedPin === pin) {
+                                        console.log("PIN verified ok");
+                                        var userRoRemove = users[authIdToRemove];
+                                        if (userRoRemove) {
+                                            delete users[authIdToRemove];
+                                        }
+                                        this.sendStatus(nukiConstants.STATUS_COMPLETE);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    }
+                                } else {
+                                    console.log("Can't remove authorization entry, because no admin pin is set");
+                                }
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonceABF", nonceABF);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+                            break;
+                        case nukiConstants.CMD_LOCK_ACTION:
+                            console.log("CL sent CMD_LOCK_ACTION");
+
+                            var lockAction = payload.readUInt8(0);
+                            var appId = payload.readUInt32LE(1);
+                            var u = _.findWhere(this.users, {appId: appId});
+                            if (u) {
+                                var name = u.name.trim();
+                                var flags = payload.readUInt8(5);
+                                nonceABF = payload.slice(6, 6 + 32);
                                 if (Buffer.compare(this.nonceK, nonceABF) === 0) {
-
-                                    pin = payload.readUInt16LE(4 + 32);
-
-                                    savedPin = this.config.get("adminPin");
-                                    if (savedPin != null) {
-                                        if (savedPin === pin) {
-                                            console.log("PIN verified ok");
-                                            var userRoRemove = users[authIdToRemove];
-                                            if (userRoRemove) {
-                                                delete users[authIdToRemove];
-                                            }
-                                            this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        } else {
-                                            console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
-                                            this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
-                                        }
-                                    } else {
-                                        console.log("Can't remove authorization entry, because no admin pin is set");
+                                    switch (lockAction) {
+                                        case 1: // unlock
+                                            console.log("UNLOCKING DOOR by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 2: // lock
+                                            console.log("LOCKING DOOR by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 3: // unlatch
+                                            console.log("UNLATCHING DOOR by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 4: // lock'n'go (unlock - wait - lock)
+                                            console.log("LOCK'N GO DOOR by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
+                                            console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 81: // fob action 1
+                                            console.log("EXECUTING FOB ACTION 1 by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 82: // fob action 2
+                                            console.log("EXECUTING FOB ACTION 2 by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        case 83: // fob action 3
+                                            console.log("EXECUTING FOB ACTION 3 by " + name);
+                                            this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                            this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
+                                            break;
+                                        default:
+                                            console.log("ERROR: lock action sent with unknown lock action (" + lockAction + "). Ignoring.");
+                                            this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
                                     }
                                 } else {
                                     console.log("ERROR: nonce differ");
@@ -567,84 +629,17 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("nonceABF", nonceABF);
                                     this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                                 }
-                                break;
-                            case nukiConstants.CMD_LOCK_ACTION:
-                                console.log("CL sent CMD_LOCK_ACTION");
-
-                                var lockAction = payload.readUInt8(0);
-                                var appId = payload.readUInt32LE(1);
-                                var u = _.findWhere(this.users, {appId: appId});
-                                if (u) {
-                                    var name = u.name.trim();
-                                    var flags = payload.readUInt8(5);
-                                    nonceABF = payload.slice(6, 6 + 32);
-                                    if (Buffer.compare(this.nonceK, nonceABF) === 0) {
-                                        switch (lockAction) {
-                                            case 1: // unlock
-                                                console.log("UNLOCKING DOOR by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 2: // lock
-                                                console.log("LOCKING DOOR by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 3: // unlatch
-                                                console.log("UNLATCHING DOOR by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 4: // lock'n'go (unlock - wait - lock)
-                                                console.log("LOCK'N GO DOOR by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
-                                                console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 81: // fob action 1
-                                                console.log("EXECUTING FOB ACTION 1 by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 82: // fob action 2
-                                                console.log("EXECUTING FOB ACTION 2 by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            case 83: // fob action 3
-                                                console.log("EXECUTING FOB ACTION 3 by " + name);
-                                                this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                this.simulateLock(lockAction, authorizationId, nonce, sharedSecret);
-                                                break;
-                                            default:
-                                                console.log("ERROR: lock action sent with unknown lock action (" + lockAction + "). Ignoring.");
-                                                this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
-                                        }
-                                    } else {
-                                        console.log("ERROR: nonce differ");
-                                        console.log("nonceK", this.nonceK);
-                                        console.log("nonceABF", nonceABF);
-                                        this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
-                                    }
-                                } else {
-                                    console.log("ERROR: lock action sent from unknown AppId (" + appId + "). Ignoring.");
-                                    this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
-                                }
-                                break;
-                            default:
-                                console.log("COMMAND NOT IMPLEMENTED: 0x" + cmdIdBuf.toString('hex'));
-                                console.log("decrypted message: ", decryptedMessge);
-                                console.log("payload", payload);
-                        }
-                        callback(this.RESULT_SUCCESS);
-                    } else {
-                        console.log("ERROR: payload length does not match the specified length from ADATA");
-                        callback(this.RESULT_UNLIKELY_ERROR);
+                            } else {
+                                console.log("ERROR: lock action sent from unknown AppId (" + appId + "). Ignoring.");
+                                this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
+                            }
+                            break;
+                        default:
+                            console.log("COMMAND NOT IMPLEMENTED: 0x" + cmdIdBuf.toString('hex'));
+                            console.log("decrypted message: ", decryptedMessge);
+                            console.log("payload", payload);
                     }
+                    callback(this.RESULT_SUCCESS);
                 } else {
                     console.log("ERROR: crc not ok");
                     callback(this.RESULT_UNLIKELY_ERROR);
