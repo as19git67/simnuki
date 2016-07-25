@@ -573,7 +573,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             var lockAction = payload.readUInt8(0);
                             var appId = payload.readUInt32LE(1);
                             var us = [];
-                            _.each(this.users, function (user) {
+                            _.each(users, function (user) {
                                 us.push(user);
                             });
                             console.log("users:", us);
