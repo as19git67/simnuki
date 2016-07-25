@@ -576,7 +576,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             _.each(this.users, function (user) {
                                 us.push(user);
                             });
-
+                            console.log("users:", us);
                             var u = _.findWhere(us, {appId: appId});
                             if (u) {
                                 var name = u.name.trim();
