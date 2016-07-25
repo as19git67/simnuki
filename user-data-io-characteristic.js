@@ -305,20 +305,19 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
             if (user && user.sharedSecret) {
                 var sharedSecret = new Buffer(user.sharedSecret, 'hex');
 
-                if (messageLen === payload.length) {
-                    var prefixBuff = new Buffer(16);
-                    prefixBuff.fill(0);
+                var prefixBuff = new Buffer(16);
+                prefixBuff.fill(0);
 
-                    var decryptedMessge = sodium.api.crypto_secretbox_open(Buffer.concat([prefixBuff, encryptedMessage]), nonceABF, sharedSecret);
+                var decryptedMessge = sodium.api.crypto_secretbox_open(Buffer.concat([prefixBuff, encryptedMessage]), nonceABF, sharedSecret);
 
-                    if (nukiConstants.crcOk(decryptedMessge)) {
-                        // console.log("CRC ok");
-                        var authorizationIdFromEncryptedMessage = decryptedMessge.readUInt32LE(0);
-                        // console.log("authorization-id: " + authorizationIdFromEncryptedMessage);
-                        var cmdId = decryptedMessge.readUInt16LE(4);
-                        var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
-                        var payload = decryptedMessge.slice(6, decryptedMessge.length - 2);
-
+                if (nukiConstants.crcOk(decryptedMessge)) {
+                    // console.log("CRC ok");
+                    var authorizationIdFromEncryptedMessage = decryptedMessge.readUInt32LE(0);
+                    // console.log("authorization-id: " + authorizationIdFromEncryptedMessage);
+                    var cmdId = decryptedMessge.readUInt16LE(4);
+                    var cmdIdBuf = decryptedMessge.slice(4, 4 + 2);
+                    var payload = decryptedMessge.slice(6, decryptedMessge.length - 2);
+                    if (messageLen === payload.length) {
                         switch (cmdId) {
                             case nukiConstants.CMD_REQUEST_DATA:
                                 console.log("CL sent CMD_REQUEST_DATA");
