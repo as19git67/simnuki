@@ -6,9 +6,6 @@ var bleno = require('bleno');
 var sodium = require('sodium');
 var uuid = require('uuid');
 
-var nukiIdStr = '2000001B';
-
-process.env['BLENO_DEVICE_NAME'] = 'Nuki_' + nukiIdStr;
 
 var config = new nconf.Provider({
     env: true,
@@ -20,10 +17,14 @@ var config = new nconf.Provider({
 });
 
 var strUuid = config.get('uuid');
+var nukiIdStr = config.get('nukiId');
 if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     var arrUUID = new Array(16);
     uuid.v1(null, arrUUID);
     config.set('uuid', new Buffer(arrUUID).toString('hex'));
+    var nukiSerial = new Buffer(4);
+    sodium.api.randombytes_buf(nukiSerial);
+    nukiIdStr = nukiSerial.toString('hex');
     config.set('nukiId', nukiIdStr);
     config.set('nukiState', 0); // not initialized
     config.save(function (err) {
@@ -37,10 +38,8 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     console.log("SL UUID: " + strUuid);
 }
 
+process.env['BLENO_DEVICE_NAME'] = 'Nuki_' + nukiIdStr;
 
-// todo: read from file or generate keys if not in file
-var publicKeySample = "2FE57DA347CD62431528DAAC5FBB290730FFF684AFC4CFC2ED90995F58CB3B74";
-var secretKeySample = "012345265462465716596ABCDEF1599297ADFFE75685365578954446435BACA1";
 
 var keys = {
     slPk: null,

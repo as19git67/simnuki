@@ -121,17 +121,24 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
             self.sendAndWait.call(self, authorizationId, nonce, sharedSecret);
         } else {
             self.sendQueueTimeout = undefined;
+            console.log("LOCK ACTION COMPLETED");
             self.sendStatus(nukiConstants.STATUS_COMPLETE);
         }
-    }, 2000);
+    }, 1000);
 
     if (self.sendQueue.length > 0) {
         var lockStateFromQueue = self.sendQueue[0];
         self.config.set('lockState', lockStateFromQueue);
-        console.log("send nuki states. lock state: " + lockStateFromQueue);
-        console.log("sendAndWait - nonce:", nonce);
-        self.sendNukiStates(authorizationId, nonce, sharedSecret);
-        self.sendQueue.shift();
+        self.config.save(function (err) {
+            if (err) {
+                console.log("Writing configuration failed in sendAndWait", err);
+                self.sendError(nukiConstants.ERROR_UNKNOWN, nukiConstants.CMD_LOCK_ACTION);
+            } else {
+                console.log("send nuki states. lock state: " + lockStateFromQueue);
+                self.sendNukiStates(authorizationId, nonce, sharedSecret);
+                self.sendQueue.shift();
+            }
+        });
     }
 };
 
@@ -141,19 +148,19 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
     this.sendQueue = [];
     switch (targetState) {
         case 1: // unlock
-            this.sendQueue = [2, 3];
+            this.sendQueue.push([2, 3]);
             break;
         case 2: // lock
-            this.sendQueue = [4, 1];
+            this.sendQueue.push([4, 1]);
             break;
         case 3: // unlatch
-            this.sendQueue = [2, 3, 5];
+            this.sendQueue.push([2, 3, 5, 3]);
             break;
         case 4: // lock'n'go (unlock - wait - lock)
-            this.sendQueue = [2, 3, 4, 1];
+            this.sendQueue.push([2, 3, 4, 1]);
             break;
         case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
-            this.sendQueue = [2, 3, 5, 4, 1];
+            this.sendQueue.push([2, 3, 5, 4, 1]);
             break;
         case 81: // fob action 1
             fobAction = this.config.get('fobAction1');
@@ -172,8 +179,9 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
 
     if (!this.sendQueueTimeout) {
         if (this.sendQueue.length > 0) {
-            console.log("simulateLock - nonce:", nonce);
             self.sendAndWait(authorizationId, nonce, sharedSecret);
+        } else {
+            self.sendStatus(nukiConstants.STATUS_COMPLETE);
         }
     }
 };
@@ -219,7 +227,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendNukiStates = function (a
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (data, offset, withoutResponse, callback) {
-    var nonce, d, currentTimeBuffer, timezoneOffset, value, pin, savedPin;
+    var nonce, d, currentTimeBuffer, timezoneOffset, value, pin, savedPin, name;
     // console.log("UserSpecificDataInputOutputCharacteristic write:", data);
     function simulateCalibration() {
         var self = this;
@@ -415,7 +423,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 nameStr = 'Nuki_' + nukiIdStr;
                             }
                             var nameBuffer = new Buffer(32).fill(' ');
-                            var name = new Buffer(nameStr);
+                            name = new Buffer(nameStr);
                             if (name.length > nameBuffer.length) {
                                 name.copy(nameBuffer, 0, 0, nameBuffer.length);
                             } else {
@@ -530,6 +538,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             break;
                         case nukiConstants.CMD_UPDATE_TIME:
                             console.log("CL sent CMD_UPDATE_TIME");
+                            // don't need to do anything here
                             this.sendStatus(nukiConstants.STATUS_COMPLETE);
                             break;
                         case nukiConstants.CMD_AUTHORIZATION_DATA_INVITE:
@@ -576,14 +585,14 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
 
                             var lockAction = payload.readUInt8(0);
                             var appId = payload.readUInt32LE(1);
-                            var us = [];
-                            _.each(users, function (user) {
-                                us.push(user);
-                            });
-                            console.log("users:", us);
-                            var u = _.findWhere(us, {appId: appId});
+                            // var us = [];
+                            // _.each(users, function (user) {
+                            //     us.push(user);
+                            // });
+                            // console.log("users:", us);
+                            var u = _.findWhere(users, {appId: appId});
                             if (u) {
-                                var name = u.name.trim();
+                                name = u.name.trim();
                                 var flags = payload.readUInt8(5);
                                 nonce = payload.slice(6, 6 + 32);
                                 if (Buffer.compare(this.nonceK, nonce) === 0) {
