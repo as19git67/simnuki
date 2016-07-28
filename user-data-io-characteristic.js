@@ -128,7 +128,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
 
     if (self.sendQueue.length > 0) {
         var lockStateFromQueue = self.sendQueue[0];
-        self.config.set('lockState', lockStateFromQueue);
+        self.config.set("lockState", lockStateFromQueue);
         self.config.save(function (err) {
             if (err) {
                 console.log("Writing configuration failed in sendAndWait", err);
@@ -141,6 +141,11 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
         });
     }
 };
+UserSpecificDataInputOutputCharacteristic.prototype._putLockStatesToQueue = function (lockStates) {
+    _.each(lockStates, function (lockState) {
+        this.sendQueue.push(lockState);
+    }, this);
+};
 
 UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (targetState, authorizationId, nonce, sharedSecret) {
     var fobAction;
@@ -148,19 +153,19 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
     this.sendQueue = [];
     switch (targetState) {
         case 1: // unlock
-            this.sendQueue.push([2, 3]);
+            this._putLockStatesToQueue([2, 3]);
             break;
         case 2: // lock
-            this.sendQueue.push([4, 1]);
+            this._putLockStatesToQueue([4, 1]);
             break;
         case 3: // unlatch
-            this.sendQueue.push([2, 3, 5, 3]);
+            this._putLockStatesToQueue([2, 3, 5, 3]);
             break;
         case 4: // lock'n'go (unlock - wait - lock)
-            this.sendQueue.push([2, 3, 4, 1]);
+            this._putLockStatesToQueue([2, 3, 4, 1]);
             break;
         case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
-            this.sendQueue.push([2, 3, 5, 4, 1]);
+            this._putLockStatesToQueue([2, 3, 5, 4, 1]);
             break;
         case 81: // fob action 1
             fobAction = this.config.get('fobAction1');
