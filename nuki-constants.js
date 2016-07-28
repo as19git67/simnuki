@@ -35,8 +35,13 @@ module.exports.ERROR_UNKNOWN = 0xFF;
 module.exports.NUKI_NONCEBYTES = 32;
 
 module.exports.crcOk = function (dataTocheck) {
-    var dataForCrc = dataTocheck.slice(0, dataTocheck.length - 2);
-    var crcSumCalc = crc.crc16ccitt(dataForCrc);
-    var crcSumRetrieved = dataTocheck.readUInt16LE(dataTocheck.length - 2);
-    return crcSumCalc === crcSumRetrieved;
+    if (dataTocheck) {
+        var dataForCrc = dataTocheck.slice(0, dataTocheck.length - 2);
+        var crcSumCalc = crc.crc16ccitt(dataForCrc);
+        var crcSumRetrieved = dataTocheck.readUInt16LE(dataTocheck.length - 2);
+        return crcSumCalc === crcSumRetrieved;
+    } else {
+        console.log("ERROR: can't check CRC with null buffer");
+        return false;
+    }
 };
