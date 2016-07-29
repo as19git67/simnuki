@@ -134,8 +134,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
                 console.log("Writing configuration failed in sendAndWait", err);
                 self.sendError(nukiConstants.ERROR_UNKNOWN, nukiConstants.CMD_LOCK_ACTION);
             } else {
-                console.log("send nuki states. lock state: " + lockStateFromQueue);
-                self.sendNukiStates(authorizationId, nonce, sharedSecret);
+                console.log("send nuki states. lock state: " + self.config.get("lockState"));
+                self.sendNukiStates.call(self, authorizationId, nonce, sharedSecret);
                 self.sendQueue.shift();
             }
         });
@@ -198,6 +198,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendNukiStates = function (a
 
     var lockState = new Buffer(1);
     lockState.writeUInt8(this.config.get("lockState") || 1);
+    console.log("sendNukiStates - lockState", lockState);
 
     var trigger = new Buffer(1);
     trigger.writeUInt8(0);  // bluetooth
