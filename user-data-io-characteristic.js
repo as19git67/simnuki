@@ -194,7 +194,6 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
 UserSpecificDataInputOutputCharacteristic.prototype.sendNukiStates = function (authorizationId, nonce, sharedSecret) {
     var nukiState = new Buffer(1);
     var nukiStateFromConfig = this.config.get("nukiState");
-    console.log("nuki state", nukiStateFromConfig);
     nukiState.writeUInt8(nukiStateFromConfig);
 
     var lockState = new Buffer(1);
@@ -220,7 +219,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendNukiStates = function (a
 
     var nukiStates = Buffer.concat([nukiState, lockState, trigger, currentTimeBuffer, timezoneOffset, criticalBatteryState]);
     this.prepareEncryptedDataToSend(nukiConstants.CMD_NUKI_STATES, authorizationId, nonce, sharedSecret, nukiStates);
-    console.log("nonce after prepareEncryptedDataToSend", nonce);
+    // console.log("nonce after prepareEncryptedDataToSend", nonce);
     while (this.dataStillToSend.length > 0) {
         value = this.getNextChunk(this.dataStillToSend);
         if (this._updateValueCallback && value.length > 0) {
