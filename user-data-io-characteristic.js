@@ -164,7 +164,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendAndWait = function (auth
             self.sendQueueTimeout = undefined;
             console.log("LOCK ACTION COMPLETED");
             //hmk self.sendStatus(nukiConstants.STATUS_COMPLETE);
-            self.sendStatusEncrypted(authorizationId, nonce, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+            self.sendStatusEncrypted(authorizationId, nonce, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
         }
     }, 1000);
 
@@ -229,7 +229,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.simulateLock = function (tar
             self.sendAndWait(authorizationId, nonce, sharedSecret);
         } else {
             //hmk self.sendStatus(nukiConstants.STATUS_COMPLETE);
-            self.sendStatusEncrypted(authorizationId, nonce, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+            self.sendStatusEncrypted(authorizationId, nonce, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
         }
     }
 };
@@ -279,12 +279,12 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
     function simulateCalibration(authorizationId, nonceABF, sharedSecret) {
         var self = this;
         //hmk self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
         setTimeout(function () {
             self.config.set("lockState", 1); // locked
             console.log("locked");
             //hmk self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-            self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+            self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
             self.config.save(function (err) {
                 if (err) {
                     console.log("Writing configuration failed", err);
@@ -294,7 +294,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                         self.config.set("lockState", 2); // unlocking
                         console.log("unlocking");
                         //hmk self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                         self.config.save(function (err) {
                             if (err) {
                                 console.log("Writing configuration failed", err);
@@ -304,7 +304,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     self.config.set("lockState", 3); // unlocked
                                     console.log("unlocked");
                                     //hmk self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                    self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                    self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                     self.config.save(function (err) {
                                         if (err) {
                                             console.log("Writing configuration failed", err);
@@ -314,7 +314,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                                 self.config.set("lockState", 5); // unlatched
                                                 console.log("unlatched");
                                                 //hmk self.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                                self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                                self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                                 self.config.save(function (err) {
                                                     if (err) {
                                                         console.log("Writing configuration failed", err);
@@ -324,7 +324,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                                             self.config.set("lockState", 1); // locked
                                                             console.log("locked");
                                                             //hmk self.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                                            self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                                                            self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                                                             self.config.save(function (err) {
                                                                 if (err) {
                                                                     console.log("Writing configuration failed", err);
@@ -454,7 +454,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     } else {
                                         console.log("Configuration saved");
                                         //hmk self.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                                        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                                     }
                                 });
                             } else {
@@ -575,7 +575,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     if (savedPin === pin) {
                                         console.log("PIN verified ok");
                                         //hmk this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                                        this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
@@ -583,7 +583,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 } else {
                                     this.config.set('nukiState', 2); // door mode
                                     //hmk this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                    this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                                    this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                                 }
                             } else {
                                 console.log("ERROR: nonce differ");
@@ -596,7 +596,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             console.log("CL sent CMD_UPDATE_TIME");
                             // don't need to do anything here
                             //hmk this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                             break;
                         case nukiConstants.CMD_AUTHORIZATION_DATA_INVITE:
                             console.log("CL sent CMD_AUTHORIZATION_DATA_INVITE");
@@ -604,7 +604,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             // todo
 
                             //hmk this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                             break;
                         case nukiConstants.CMD_REMOVE_AUTHORIZATION_ENTRY:
                             console.log("CL sent CMD_REMOVE_AUTHORIZATION_ENTRY");
@@ -624,7 +624,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                             delete users[authIdToRemove];
                                         }
                                         //hmk this.sendStatus(nukiConstants.STATUS_COMPLETE);
-                                        this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE)	//hmk
+                                        this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);	//hmk
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + pin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
@@ -659,56 +659,56 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                         case 1: // unlock
                                             console.log("UNLOCKING DOOR by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 2: // lock
                                             console.log("LOCKING DOOR by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 3: // unlatch
                                             console.log("UNLATCHING DOOR by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 4: // lock'n'go (unlock - wait - lock)
                                             console.log("LOCK'N GO DOOR by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
                                             console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 81: // fob action 1
                                             console.log("EXECUTING FOB ACTION 1 by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 82: // fob action 2
                                             console.log("EXECUTING FOB ACTION 2 by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
                                         case 83: // fob action 3
                                             console.log("EXECUTING FOB ACTION 3 by " + name);
                                             //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED)	//hmk
+                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
                                             sleep.sleep(2);		//hmk
                                             this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
                                             break;
