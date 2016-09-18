@@ -100,8 +100,8 @@ bleno.on('stateChange', function (state) {
         localNamePrefixBuf.writeUInt8(completeLocalNameBuf.length + 1);
         localNamePrefixBuf.writeUInt8(0x09, 1); // data type 0x09 means "Complete Local Name"
         var scanDataBuf = Buffer.concat([localNamePrefixBuf, completeLocalNameBuf]);
-         console.log("Advertising with ", advBuf);
-         console.log("Scan data ", scanDataBuf);
+        // console.log("Advertising with ", advBuf);
+        // console.log("Scan data ", scanDataBuf);
         bleno.startAdvertisingWithEIRData(advBuf, scanDataBuf, function (err) {
             if (err) {
                 console.log("ERROR: startAdvertisingWithEIRData failed:", err);
