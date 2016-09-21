@@ -18,6 +18,7 @@ module.exports.CMD_SET_CONFIG = 0x13;
 module.exports.CMD_REQUEST_CONFIG = 0x14;
 module.exports.CMD_CONFIG = 0x15;
 module.exports.CMD_REQUEST_CALIBRATION = 0x1A;
+module.exports.CMD_SET_PIN = 0x19;
 module.exports.CMD_VERIFY_PIN = 0x20;
 module.exports.CMD_UPDATE_TIME = 0x21;
 

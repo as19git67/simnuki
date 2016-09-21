@@ -84,8 +84,6 @@ bleno.on('stateChange', function (state) {
         for (var i = 0; i < uuidReverseBuf.length; i++) {
             uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
         }
-       // var serviceDataBuf = new Buffer(nukiIdStr, 'hex');
-        //var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
         var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf]);
         var len = advDataBuf.length;
         // console.log("Length of adv data: " + len);
@@ -94,7 +92,6 @@ bleno.on('stateChange', function (state) {
 
 
         var advBuf = Buffer.concat([preBuf, lenBuf, advDataBuf]);
-        //var advBuf = Buffer(0);
 
         var completeLocalName = 'Nuki_' + nukiIdStr;
         var completeLocalNameBuf = new Buffer(completeLocalName, 'ascii');

@@ -563,6 +563,36 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                             }
                             break;
+                        case nukiConstants.CMD_SET_PIN:
+                            console.log("CL sent CMD_SET_PIN");
+                            payload.slice(2, 2 + 32);
+                            if (Buffer.compare(this.nonceK, nonce) === 0) {
+                                var newPin = payload.readUInt16LE(0);
+                                var oldPin = payload.readUInt16LE(32 + 2);
+                                console.log("old PIN ", oldPin);
+                                console.log("new PIN ", newPin);
+                                savedPin = this.config.get("adminPin");
+                                if (savedPin) {
+                                    if (savedPin === oldPin) {
+                                        console.log("old PIN verified ok");
+                                        this.config.set('adminPin', newPin);
+                                        console.log("set new Pin: ", newPin);
+                                    } else {
+                                        console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + oldPin);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
+                                    }
+                                } else {
+                                    this.config.set('adminPin', newPin);
+                                    console.log("set new Pin: ", newPin);
+                                }
+                            } else {
+                                console.log("ERROR: nonce differ");
+                                console.log("nonceK", this.nonceK);
+                                console.log("nonce", nonce);
+                                this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                            }
+
+                            break;
                         case nukiConstants.CMD_VERIFY_PIN:
                             console.log("CL sent CMD_VERIFY_PIN");
                             nonce = payload.slice(0, 32);
@@ -649,91 +679,88 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             //     us.push(user);
                             // });
                             // console.log("users:", us);
-if (this.nonceK) {
-                            var u = _.findWhere(users, {appId: appId});
-                            if (u) {
-                                name = u.name.trim();
-                                var flags = payload.readUInt8(5);
-                                nonce = payload.slice(6, 6 + 32);
-                                if (Buffer.compare(this.nonceK, nonce) === 0) {
-                                    switch (lockAction) {
-                                        case 1: // unlock
-                                            console.log("UNLOCKING DOOR by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 2: // lock
-                                            console.log("LOCKING DOOR by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 3: // unlatch
-                                            console.log("UNLATCHING DOOR by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 4: // lock'n'go (unlock - wait - lock)
-                                            console.log("LOCK'N GO DOOR by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
-                                            console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 81: // fob action 1
-                                            console.log("EXECUTING FOB ACTION 1 by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 82: // fob action 2
-                                            console.log("EXECUTING FOB ACTION 2 by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        case 83: // fob action 3
-                                            console.log("EXECUTING FOB ACTION 3 by " + name);
-                                            //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
-                                            this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
-                                            sleep.sleep(2);		//hmk
-                                            this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
-                                            break;
-                                        default:
-                                            console.log("ERROR: lock action sent with unknown lock action (" + lockAction + "). Ignoring.");
-                                            this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
+                            if (this.nonceK) {
+                                var u = _.findWhere(users, {appId: appId});
+                                if (u) {
+                                    name = u.name.trim();
+                                    var flags = payload.readUInt8(5);
+                                    nonce = payload.slice(6, 6 + 32);
+                                    if (Buffer.compare(this.nonceK, nonce) === 0) {
+                                        switch (lockAction) {
+                                            case 1: // unlock
+                                                console.log("UNLOCKING DOOR by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 2: // lock
+                                                console.log("LOCKING DOOR by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 3: // unlatch
+                                                console.log("UNLATCHING DOOR by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 4: // lock'n'go (unlock - wait - lock)
+                                                console.log("LOCK'N GO DOOR by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 5: // lock'n'go with unlatch (unlock - unlatch - wait - lock)
+                                                console.log("LOCK'N GO WITH UNLATCH DOOR by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 81: // fob action 1
+                                                console.log("EXECUTING FOB ACTION 1 by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 82: // fob action 2
+                                                console.log("EXECUTING FOB ACTION 2 by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            case 83: // fob action 3
+                                                console.log("EXECUTING FOB ACTION 3 by " + name);
+                                                //hmk this.sendStatus(nukiConstants.STATUS_ACCEPTED);
+                                                this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_ACCEPTED);	//hmk
+                                                sleep.sleep(2);		//hmk
+                                                this.simulateLock(lockAction, authorizationId, nonceABF, sharedSecret);
+                                                break;
+                                            default:
+                                                console.log("ERROR: lock action sent with unknown lock action (" + lockAction + "). Ignoring.");
+                                                this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
+                                        }
+                                    } else {
+                                        console.log("ERROR: nonce differ");
+                                        console.log("nonceK", this.nonceK);
+                                        console.log("nonce", nonce);
+                                        this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
                                     }
                                 } else {
-                                    console.log("ERROR: nonce differ");
-                                    console.log("nonceK", this.nonceK);
-                                    console.log("nonce", nonce);
-                                    this.sendError(nukiConstants.K_ERROR_BAD_NONCE, cmdId);
+                                    console.log("ERROR: lock action sent from unknown AppId (" + appId + "). Ignoring.");
+                                    this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
                                 }
                             } else {
-                                console.log("ERROR: lock action sent from unknown AppId (" + appId + "). Ignoring.");
-                                this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
+                                console.log("Don't have nonceK - ignoring command");
                             }
-} else {
-console.log("Don't have nonceK - ignoring command");
-}
                             break;
-case 1900: // COMMAND NOT IMPLEMENTED: 0x1900
-// todo
-break;
                         default:
                             console.log("COMMAND NOT IMPLEMENTED: 0x" + cmdIdBuf.toString('hex'));
                             console.log("decrypted message: ", decryptedMessge);
