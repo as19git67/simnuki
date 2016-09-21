@@ -86,7 +86,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.sendStatusEncrypted = functi
     //console.log("pData: ", pData);
 
     this.dataStillToSend = Buffer.concat([aData, pDataEncrypted]);
-    console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
+    //console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);
 
     while (this.dataStillToSend.length > 0) {
         value = this.getNextChunk(this.dataStillToSend);
@@ -122,7 +122,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.prepareEncryptedDataToSend =
     // console.log("pData: ", pData);
 
     this.dataStillToSend = Buffer.concat([aData, pDataEncrypted]);
-    console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);	//hmk
+    //console.log("prepared to send:", this.dataStillToSend, this.dataStillToSend.length);	//hmk
 };
 
 UserSpecificDataInputOutputCharacteristic.prototype.determineFobAction = function (fobAction) {
@@ -649,6 +649,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             //     us.push(user);
                             // });
                             // console.log("users:", us);
+if (this.nonceK) {
                             var u = _.findWhere(users, {appId: appId});
                             if (u) {
                                 name = u.name.trim();
@@ -726,7 +727,13 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 console.log("ERROR: lock action sent from unknown AppId (" + appId + "). Ignoring.");
                                 this.sendError(nukiConstants.K_ERROR_BAD_PARAMETER, cmdId);
                             }
+} else {
+console.log("Don't have nonceK - ignoring command");
+}
                             break;
+case 1900: // COMMAND NOT IMPLEMENTED: 0x1900
+// todo
+break;
                         default:
                             console.log("COMMAND NOT IMPLEMENTED: 0x" + cmdIdBuf.toString('hex'));
                             console.log("decrypted message: ", decryptedMessge);

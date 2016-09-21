@@ -24,7 +24,7 @@ if (!(strUuid && _.isString(strUuid) && strUuid.length === 32)) {
     config.set('uuid', new Buffer(arrUUID).toString('hex'));
     var nukiSerial = new Buffer(4);
     sodium.api.randombytes_buf(nukiSerial);
-    nukiIdStr = nukiSerial.toString('hex');
+    nukiIdStr = nukiSerial.toString('hex').toUpperCase();
     config.set('nukiId', nukiIdStr);
     config.set('nukiState', 0); // not initialized
     config.save(function (err) {
@@ -84,8 +84,9 @@ bleno.on('stateChange', function (state) {
         for (var i = 0; i < uuidReverseBuf.length; i++) {
             uuidReverseBuf[i] = uuidBuf[uuidBuf.length - i - 1];
         }
-        var serviceDataBuf = new Buffer(nukiIdStr, 'hex');
-        var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
+       // var serviceDataBuf = new Buffer(nukiIdStr, 'hex');
+        //var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf, serviceDataBuf]);
+        var advDataBuf = Buffer.concat([typeBuf, uuidReverseBuf]);
         var len = advDataBuf.length;
         // console.log("Length of adv data: " + len);
         var lenBuf = new Buffer(1);
@@ -93,6 +94,7 @@ bleno.on('stateChange', function (state) {
 
 
         var advBuf = Buffer.concat([preBuf, lenBuf, advDataBuf]);
+        //var advBuf = Buffer(0);
 
         var completeLocalName = 'Nuki_' + nukiIdStr;
         var completeLocalNameBuf = new Buffer(completeLocalName, 'ascii');
