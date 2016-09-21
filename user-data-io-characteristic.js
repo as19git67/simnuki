@@ -573,12 +573,20 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 console.log("old PIN ", oldPin);
                                 console.log("new PIN ", newPin);
                                 savedPin = this.config.get("adminPin");
+                                var self = this;
                                 if (savedPin) {
                                     if (savedPin === oldPin) {
                                         console.log("old PIN verified ok");
                                         this.config.set('adminPin', newPin);
                                         console.log("set new Pin: ", newPin);
-                                        this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
+                                        this.config.save(function (err) {
+                                            if (err) {
+                                                console.log("Writing new admin pin to config.json failed", err);
+                                                self.sendError(nukiConstants.ERROR_UNKNOWN, nukiConstants.CMD_SET_PIN);
+                                            } else {
+                                                self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
+                                            }
+                                        });
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + oldPin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
@@ -586,7 +594,14 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 } else {
                                     this.config.set('adminPin', newPin);
                                     console.log("set new Pin: ", newPin);
-                                    this.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
+                                    this.config.save(function (err) {
+                                        if (err) {
+                                            console.log("Writing new admin pin to config.json failed", err);
+                                            self.sendError(nukiConstants.ERROR_UNKNOWN, nukiConstants.CMD_SET_PIN);
+                                        } else {
+                                            self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
+                                        }
+                                    });
                                 }
                             } else {
                                 console.log("ERROR: nonce differ");
