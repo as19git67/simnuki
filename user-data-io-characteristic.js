@@ -391,7 +391,8 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                     console.log("CL requests challenge");
                                     this.nonceK = new Buffer(nukiConstants.NUKI_NONCEBYTES);
                                     sodium.api.randombytes_buf(this.nonceK);
-                                    console.log("NEW nonceK", this.nonceK);
+                                    // console.log("NEW nonceK", this.nonceK);
+                                    console.log("NEW nonceK received");
 
                                     this.prepareEncryptedDataToSend(nukiConstants.CMD_CHALLENGE, authorizationId, nonceABF, sharedSecret, this.nonceK);
                                     while (this.dataStillToSend.length > 0) {
@@ -565,7 +566,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                             break;
                         case nukiConstants.CMD_SET_PIN:
                             console.log("CL sent CMD_SET_PIN");
-                            payload.slice(2, 2 + 32);
+                            nonce = payload.slice(2, 2 + 32);
                             if (Buffer.compare(this.nonceK, nonce) === 0) {
                                 var newPin = payload.readUInt16LE(0);
                                 var oldPin = payload.readUInt16LE(32 + 2);
