@@ -578,6 +578,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                         console.log("old PIN verified ok");
                                         this.config.set('adminPin', newPin);
                                         console.log("set new Pin: ", newPin);
+                                        self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
                                     } else {
                                         console.log("ERROR: pin not ok. Saved: " + savedPin + ", given: " + oldPin);
                                         this.sendError(nukiConstants.K_ERROR_BAD_PIN, cmdId);
@@ -585,6 +586,7 @@ UserSpecificDataInputOutputCharacteristic.prototype.onWriteRequest = function (d
                                 } else {
                                     this.config.set('adminPin', newPin);
                                     console.log("set new Pin: ", newPin);
+                                    self.sendStatusEncrypted(authorizationId, nonceABF, sharedSecret, nukiConstants.STATUS_COMPLETE);
                                 }
                             } else {
                                 console.log("ERROR: nonce differ");
