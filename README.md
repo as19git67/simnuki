@@ -55,7 +55,7 @@ npm install
 ## Run it
 To run the simulator, call node with main.js. It advertises a nuki smart lock via Bluetooth and the Nuki app (tried with iOS) can pair and do lock and unlock operations. Note, that not all of the Nuki API is implemented. For example, adding additional users is not there currently.
 
-There is also the counterpart for it: a simulator of a client: https://github.com/as19git67/simnukifob which can be used on a second Raspberry PI to simulate the Nuki app.
+There is also the counterpart for it: a library to build a client: https://github.com/as19git67/nukible. In the samples directory there is main.js, which can be used on a second Raspberry PI to simulate the Nuki app.
 
 ```sh
 node main.js
